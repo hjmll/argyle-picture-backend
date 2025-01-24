@@ -3,6 +3,9 @@ package com.yupi.argylepicturebackend.service;
 import com.yupi.argylepicturebackend.model.dto.UserRegisterRequest;
 import com.yupi.argylepicturebackend.model.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.yupi.argylepicturebackend.model.vo.LoginUserVO;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
 * @author hjm
@@ -19,5 +22,33 @@ public interface UserService extends IService<User> {
      * @return
      */
     String getEncryptPassword(String userPassword);
+    /**
+     * 用户登录
+     *
+     * @param userAccount  用户账户
+     * @param userPassword 用户密码
+     * @param request
+     * @return 脱敏后的用户信息
+     */
+    LoginUserVO userLogin(String userAccount, String userPassword, HttpServletRequest request);
 
+    /**
+     * 获取当前登录用户
+     * @param request
+     * @return
+     */
+    User getLoginUser(HttpServletRequest request);
+    /**
+     * 获取脱敏后的登录用户信息
+     * @param user
+     * @return
+     */
+    LoginUserVO getLoginUserVO(User user);
+
+    /**
+     * 用户注销
+     * @param request
+     * @return
+     */
+    boolean userLogout(HttpServletRequest request);
 }
