@@ -1,4 +1,4 @@
-package com.yupi.argylepicturebackend.model.dto;
+package com.yupi.argylepicturebackend.model.dto.user;
 
 import lombok.Data;
 

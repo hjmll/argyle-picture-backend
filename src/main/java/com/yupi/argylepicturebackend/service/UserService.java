@@ -1,11 +1,15 @@
 package com.yupi.argylepicturebackend.service;
 
-import com.yupi.argylepicturebackend.model.dto.UserRegisterRequest;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.yupi.argylepicturebackend.model.dto.user.UserQueryRequest;
+import com.yupi.argylepicturebackend.model.dto.user.UserRegisterRequest;
 import com.yupi.argylepicturebackend.model.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yupi.argylepicturebackend.model.vo.LoginUserVO;
+import com.yupi.argylepicturebackend.model.vo.UserVO;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
 * @author hjm
@@ -46,9 +50,25 @@ public interface UserService extends IService<User> {
     LoginUserVO getLoginUserVO(User user);
 
     /**
+     * 获取脱敏后的用户信息
+     * @param user
+     * @return
+     */
+    UserVO getUserVO(User user);
+
+    /**
+     * 获取脱敏后的用户信息
+     * @param userList
+     * @return
+     */
+    List<UserVO> getUserVOList(List<User> userList);
+
+    /**
      * 用户注销
      * @param request
      * @return
      */
     boolean userLogout(HttpServletRequest request);
+
+    QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest);
 }
