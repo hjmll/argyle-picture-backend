@@ -6,6 +6,7 @@ import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.yupi.argylepicturebackend.constant.UserConstant;
 import com.yupi.argylepicturebackend.exception.BusinessException;
 import com.yupi.argylepicturebackend.exception.ErrorCode;
 import com.yupi.argylepicturebackend.model.dto.user.UserQueryRequest;
@@ -216,6 +217,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return queryWrapper;
 
     }
+
+    @Override
+    public boolean isAdmin(User user) {
+        return user != null && UserRoleEnum.ADMIN.getValue().equals(user.getUserRole());
+    }
+
 
 
 }
