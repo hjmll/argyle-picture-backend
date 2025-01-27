@@ -118,5 +118,24 @@ create table if not exists space_user
 ) comment '空间用户关联' collate = utf8mb4_unicode_ci;
 
 
+-- 创建标签表
+CREATE TABLE IF NOT EXISTS tags (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    usageCount INT DEFAULT 0 COMMENT '标签使用次数',
+    createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    editTime   datetime default CURRENT_TIMESTAMP not null comment '编辑时间',
+    updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    isDelete   tinyint  default 0                 not null comment '是否删除',
+    ) COMMENT='标签表';
 
-
+-- 创建分类表
+CREATE TABLE IF NOT EXISTS categories (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    usageCount INT DEFAULT 0 COMMENT '分类使用次数',
+    createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    editTime   datetime default CURRENT_TIMESTAMP not null comment '编辑时间',
+    updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    isDelete   tinyint  default 0                 not null comment '是否删除',
+    ) COMMENT='分类表';

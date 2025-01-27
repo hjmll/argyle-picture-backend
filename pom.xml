@@ -107,7 +107,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>com.yupi.argylepicturebackend.ArgylePictureBackendApplication</mainClass>
+                    <mainClass>com.argyle.argylepicturebackend.ArgylePictureBackendApplication</mainClass>
                     <skip>true</skip>
                 </configuration>
                 <executions>
