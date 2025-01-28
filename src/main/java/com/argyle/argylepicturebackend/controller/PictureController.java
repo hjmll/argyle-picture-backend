@@ -1,6 +1,10 @@
 package com.argyle.argylepicturebackend.controller;
 
 import cn.hutool.json.JSONUtil;
+import com.argyle.argylepicturebackend.model.entity.Category;
+import com.argyle.argylepicturebackend.model.entity.Tag;
+import com.argyle.argylepicturebackend.service.CategoryService;
+import com.argyle.argylepicturebackend.service.TagService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.argyle.argylepicturebackend.annotation.AuthCheck;
 import com.argyle.argylepicturebackend.common.BaseResponse;
@@ -30,6 +34,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @Author: hjm
@@ -44,6 +49,12 @@ public class PictureController {
     private PictureService pictureService;
     @Resource
     private UserService userService;
+
+    @Resource
+    private TagService tagService;
+
+    @Resource
+    private CategoryService categoryService;
     /**
      * 上传图片（可重新上传）
      */
@@ -201,8 +212,12 @@ public class PictureController {
     @GetMapping("/tag_category")
     public BaseResponse<PictureTagCategory> listPictureTagCategory() {
         PictureTagCategory pictureTagCategory = new PictureTagCategory();
-        List<String> tagList = Arrays.asList("热门", "搞笑", "生活", "高清", "艺术", "校园", "背景", "简历", "创意","风景");
-        List<String> categoryList = Arrays.asList("模板", "电商", "旅游","表情包", "素材", "海报");
+        List<Tag> tags = tagService.list();
+        List<Category> categories = categoryService.list();
+        List<String> categoryList = categories.stream().map(Category::getName).collect(Collectors.toList());
+        List<String> tagList = tags.stream().map(Tag::getName).collect(Collectors.toList());
+        //List<String> tagList = Arrays.asList("热门", "搞笑", "生活", "高清", "艺术", "校园", "背景", "简历", "创意","风景");
+        //List<String> categoryList = Arrays.asList("模板", "电商", "旅游","表情包", "素材", "海报");
         pictureTagCategory.setTagList(tagList);
         pictureTagCategory.setCategoryList(categoryList);
         return ResultUtils.success(pictureTagCategory);

@@ -1,7 +1,7 @@
 package com.argyle.argylepicturebackend.mapper;
 
+import com.argyle.argylepicturebackend.model.entity.Tag;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.argyle.argylepicturebackend.model.entity.Tags;
 
 /**
 * @author hjm
@@ -9,7 +9,7 @@ import com.argyle.argylepicturebackend.model.entity.Tags;
 * @createDate 2025-01-28 00:07:58
 * @Entity generator.domain.Tags
 */
-public interface TagsMapper extends BaseMapper<Tags> {
+public interface TagMapper extends BaseMapper<Tag> {
 
 }
 
