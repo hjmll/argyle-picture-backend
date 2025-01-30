@@ -2,6 +2,7 @@ package com.argyle.argylepicturebackend.model.vo;
 
 import com.argyle.argylepicturebackend.model.entity.Category;
 
+import lombok.Data;
 import org.springframework.beans.BeanUtils;
 
 import java.io.Serializable;
@@ -12,6 +13,7 @@ import java.util.Date;
  * @Date: 2025/01/28/15:49
  * @Description:
  */
+@Data
 public class CategoryVO implements Serializable {
 
     private Long id;

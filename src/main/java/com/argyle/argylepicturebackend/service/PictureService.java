@@ -1,5 +1,6 @@
 package com.argyle.argylepicturebackend.service;
 
+import com.argyle.argylepicturebackend.model.dto.picture.PictureReviewRequest;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.argyle.argylepicturebackend.model.dto.picture.PictureQueryRequest;
@@ -42,5 +43,13 @@ public interface PictureService extends IService<Picture> {
 
     QueryWrapper<Picture> getQueryWrapper(PictureQueryRequest pictureQueryRequest);
 
+    /**
+     * 图片审核
+     *
+     * @param pictureReviewRequest
+     * @param loginUser
+     */
+    void doPictureReview(PictureReviewRequest pictureReviewRequest, User loginUser);
 
+    void fillReviewParams(Picture picture, User loginUser);
 }
