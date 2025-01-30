@@ -71,6 +71,10 @@ public class PictureVO implements Serializable {
      * 用户 id
      */
     private Long userId;
+    /**
+     * 审核状态：0-待审核; 1-通过; 2-拒绝
+     */
+    private Integer reviewStatus;
 
     /**
      * 创建时间
