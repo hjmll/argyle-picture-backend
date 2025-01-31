@@ -3,6 +3,7 @@ package com.argyle.argylepicturebackend.model.dto.picture;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Data
 public class PictureUploadRequest implements Serializable {
@@ -19,5 +20,7 @@ public class PictureUploadRequest implements Serializable {
      * 图片名称
      */
     private String picName;
+    private String category; // 新增：图片分类
+    private List<String> tags; // 新增：图片标签列表
     private static final long serialVersionUID = 1L;
 }

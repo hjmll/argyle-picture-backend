@@ -3,6 +3,7 @@ package com.argyle.argylepicturebackend.service.impl;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.argyle.argylepicturebackend.exception.BusinessException;
 import com.argyle.argylepicturebackend.exception.ErrorCode;
 import com.argyle.argylepicturebackend.exception.ThrowUtils;
@@ -113,13 +114,17 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
         picture.setName(picName);
 
-        //picture.setName(uploadPictureResult.getPicName());
         picture.setPicSize(uploadPictureResult.getPicSize());
         picture.setPicWidth(uploadPictureResult.getPicWidth());
         picture.setPicHeight(uploadPictureResult.getPicHeight());
         picture.setPicScale(uploadPictureResult.getPicScale());
         picture.setPicFormat(uploadPictureResult.getPicFormat());
         picture.setUserId(loginUser.getId());
+        // 设置分类和标签
+        if (pictureUploadRequest!= null) {
+            picture.setCategory(pictureUploadRequest.getCategory());
+            picture.setTags(JSONUtil.toJsonStr(pictureUploadRequest.getTags()));
+        }
         //补充审核参数
         this.fillReviewParams(picture, loginUser);
         //操作数据库
@@ -293,9 +298,15 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         if (StrUtil.isBlank(namePrefix)){
             namePrefix = searchText;
         }
+        int offset = pictureUploadByBatchRequest.getOffset() != null ? pictureUploadByBatchRequest.getOffset() : 0;
         ThrowUtils.throwIf(count > 30, ErrorCode.PARAMS_ERROR, "最多 30 条");
-        // 要抓取的地址
-        String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&mmasync=1", searchText);
+        // 在获取 offset 后添加验证
+        ThrowUtils.throwIf(offset < 0, ErrorCode.PARAMS_ERROR, "偏移量不能为负数");
+        //// 要抓取的地址
+        //String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&mmasync=1", searchText);
+
+
+        String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&first=%d&count=%d&mmasync=1", searchText, offset, count);
         Document document;
         try {
             document = Jsoup.connect(fetchUrl).get();
@@ -326,6 +337,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             if (StrUtil.isNotBlank(namePrefix)){
                 pictureUploadRequest.setPicName(namePrefix  + (uploadCount + 1));
             }
+
+            // 设置分类和标签
+            pictureUploadRequest.setCategory(pictureUploadByBatchRequest.getCategory());
+            pictureUploadRequest.setTags(pictureUploadByBatchRequest.getTags());
             try {
                 PictureVO pictureVO = this.uploadPicture(fileUrl, pictureUploadRequest, loginUser);
                 log.info("图片上传成功, id = {}", pictureVO.getId());
