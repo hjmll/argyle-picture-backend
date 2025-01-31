@@ -1,6 +1,7 @@
 package com.argyle.argylepicturebackend.service;
 
 import com.argyle.argylepicturebackend.model.dto.picture.PictureReviewRequest;
+import com.argyle.argylepicturebackend.model.dto.picture.PictureUploadByBatchRequest;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.argyle.argylepicturebackend.model.dto.picture.PictureQueryRequest;
@@ -25,15 +26,12 @@ public interface PictureService extends IService<Picture> {
     /**
      * 上传图片
      *
-     * @param multipartFile
+     * @param inputSource
      * @param pictureUploadRequest
      * @param loginUser
      * @return
      */
-    PictureVO uploadPicture(MultipartFile multipartFile,
-                            PictureUploadRequest pictureUploadRequest,
-                            User loginUser);
-
+    PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser);
 
     PictureVO getPictureVO(Picture picture, HttpServletRequest request);
 
@@ -52,4 +50,14 @@ public interface PictureService extends IService<Picture> {
     void doPictureReview(PictureReviewRequest pictureReviewRequest, User loginUser);
 
     void fillReviewParams(Picture picture, User loginUser);
+
+    /**
+     * 批量抓取和创建图片
+     *
+     * @param pictureUploadByBatchRequest
+     * @param loginUser
+     * @return 成功创建的图片数
+     */
+    Integer uploadPictureByBatch(PictureUploadByBatchRequest pictureUploadByBatchRequest, User loginUser);
+
 }
