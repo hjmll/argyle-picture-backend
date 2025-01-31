@@ -241,80 +241,88 @@ public class PictureController {
      * @param request
      * @return
      */
-    //@PostMapping("/list/page/vo/cache")
-    //public BaseResponse<Page<PictureVO>> listPictureVOByPageWithCache(@RequestBody PictureQueryRequest pictureQueryRequest,
-    //                                                                  HttpServletRequest request) {
-    //    long current = pictureQueryRequest.getCurrent();
-    //    long size = pictureQueryRequest.getPageSize();
-    //    // 限制爬虫
-    //    ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
-    //    // 普通用户默认只能查看已过审的数据
-    //    pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
-    //
-    //    // 构建缓存 key
-    //    String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
-    //    String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
-    //    String cacheKey = String.format("argylepicture:listPictureVOByPage:%s", hashKey);
-    //    //// 从 Redis 缓存中查询
-    //    //ValueOperations<String, String> valueOps = stringRedisTemplate.opsForValue();
-    //    //从本地缓存中查询
-    //    String cachedValue = LOCAL_CACHE.getIfPresent(cacheKey);
-    //
-    //    //String cachedValue = valueOps.get(cacheKey);
-    //    if (cachedValue != null) {
-    //        // 如果缓存命中，返回结果
-    //        Page<PictureVO> cachedPage = JSONUtil.toBean(cachedValue, Page.class);
-    //        return ResultUtils.success(cachedPage);
-    //    }
-    //
-    //    // 查询数据库
-    //    Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
-    //            pictureService.getQueryWrapper(pictureQueryRequest));
-    //    // 获取封装类
-    //    Page<PictureVO> pictureVOPage = pictureService.getPictureVOPage(picturePage, request);
-    //
-    //    //// 存入 Redis 缓存
-    //    String cacheValue = JSONUtil.toJsonStr(pictureVOPage);
-    //    //
-    //    //// 5 - 10 分钟随机过期，防止雪崩
-    //    //int cacheExpireTime = 300 +  RandomUtil.randomInt(0, 300);
-    //    //valueOps.set(cacheKey, cacheValue, cacheExpireTime, TimeUnit.SECONDS);
-    //
-    //    // 写入本地缓存
-    //    LOCAL_CACHE.put(cacheKey, cacheValue);
-    //    // 返回结果
-    //    return ResultUtils.success(pictureVOPage);
-    //}
-
-
     @PostMapping("/list/page/vo/cache")
     public BaseResponse<Page<PictureVO>> listPictureVOByPageWithCache(@RequestBody PictureQueryRequest pictureQueryRequest,
                                                                       HttpServletRequest request) {
         long current = pictureQueryRequest.getCurrent();
         long size = pictureQueryRequest.getPageSize();
+        // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        // 普通用户默认只能查看已过审的数据
         pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
 
+        // 构建缓存 key
         String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
         String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
         String cacheKey = String.format("argylepicture:listPictureVOByPage:%s", hashKey);
 
-        String cachedValue = cacheStrategy.get(cacheKey);
-
+        //1.先从本地缓存中查询
+        String cachedValue = LOCAL_CACHE.getIfPresent(cacheKey);
         if (cachedValue != null) {
+            // 如果缓存命中，返回结果
             Page<PictureVO> cachedPage = JSONUtil.toBean(cachedValue, Page.class);
             return ResultUtils.success(cachedPage);
         }
-
+        //2.本地缓存未命中 查询redis缓存
+        ValueOperations<String, String> valueOps = stringRedisTemplate.opsForValue();
+        cachedValue = valueOps.get(cacheKey);
+        if (cachedValue != null) {
+            // 如果缓存命中，更新本地缓存，返回结果
+            LOCAL_CACHE.put(cacheKey, cachedValue);
+            Page<PictureVO> cachedPage = JSONUtil.toBean(cachedValue, Page.class);
+            return ResultUtils.success(cachedPage);
+        }
+        // 3.查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
                 pictureService.getQueryWrapper(pictureQueryRequest));
+        // 获取封装类
         Page<PictureVO> pictureVOPage = pictureService.getPictureVOPage(picturePage, request);
-
+        //4.更新缓存
+        // 存入 Redis 缓存
         String cacheValue = JSONUtil.toJsonStr(pictureVOPage);
-        cacheStrategy.put(cacheKey, cacheValue);
-
+        // 5 - 10 分钟随机过期，防止雪崩
+        int cacheExpireTime = 300 +  RandomUtil.randomInt(0, 300);
+        valueOps.set(cacheKey, cacheValue, cacheExpireTime, TimeUnit.SECONDS);
+        // 写入本地缓存
+        LOCAL_CACHE.put(cacheKey, cacheValue);
+        // 返回结果
         return ResultUtils.success(pictureVOPage);
     }
+
+    ///**
+    // * 分策略对主页数据缓存
+    // * @param pictureQueryRequest
+    // * @param request
+    // * @return
+    // */
+    //@PostMapping("/list/page/vo/cache")
+    //public BaseResponse<Page<PictureVO>> listPictureVOByPageWithCache(@RequestBody PictureQueryRequest pictureQueryRequest,
+    //                                                                  HttpServletRequest request) {
+    //    long current = pictureQueryRequest.getCurrent();
+    //    long size = pictureQueryRequest.getPageSize();
+    //    ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+    //    pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+    //
+    //    String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
+    //    String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
+    //    String cacheKey = String.format("argylepicture:listPictureVOByPage:%s", hashKey);
+    //
+    //    String cachedValue = cacheStrategy.get(cacheKey);
+    //
+    //    if (cachedValue != null) {
+    //        Page<PictureVO> cachedPage = JSONUtil.toBean(cachedValue, Page.class);
+    //        return ResultUtils.success(cachedPage);
+    //    }
+    //
+    //    Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
+    //            pictureService.getQueryWrapper(pictureQueryRequest));
+    //    Page<PictureVO> pictureVOPage = pictureService.getPictureVOPage(picturePage, request);
+    //
+    //    String cacheValue = JSONUtil.toJsonStr(pictureVOPage);
+    //    cacheStrategy.put(cacheKey, cacheValue);
+    //
+    //    return ResultUtils.success(pictureVOPage);
+    //}
 
 
     /**
