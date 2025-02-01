@@ -20,6 +20,12 @@ public class Picture implements Serializable {
     private Long id;
 
     /**
+     * 原图 url
+     */
+    private String originalUrl;
+
+
+    /**
      * 图片 url
      */
     private String url;

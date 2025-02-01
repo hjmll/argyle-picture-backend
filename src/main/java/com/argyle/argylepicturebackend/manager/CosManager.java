@@ -2,6 +2,7 @@ package com.argyle.argylepicturebackend.manager;
 
 import cn.hutool.core.io.FileUtil;
 import com.qcloud.cos.COSClient;
+import com.qcloud.cos.exception.CosClientException;
 import com.qcloud.cos.model.COSObject;
 import com.qcloud.cos.model.GetObjectRequest;
 import com.qcloud.cos.model.PutObjectRequest;
@@ -76,7 +77,7 @@ public class CosManager {
             String thumbnailKey = FileUtil.mainName(key) + "_thumbnail." + FileUtil.getSuffix(key);
             thumbnailRule.setFileId(thumbnailKey);
             // 缩放规则 /thumbnail/<Width>x<Height>>（如果大于原图宽高，则不处理）
-            thumbnailRule.setRule(String.format("imageMogr2/thumbnail/%sx%s>", 128, 128));
+            thumbnailRule.setRule(String.format("imageMogr2/thumbnail/%sx%s>", 256, 256));
             rules.add(thumbnailRule);
         }
         // 构造处理参数
@@ -84,6 +85,16 @@ public class CosManager {
         putObjectRequest.setPicOperations(picOperations);
         return cosClient.putObject(putObjectRequest);
     }
+
+    /**
+     * 删除对象
+     *
+     * @param key 文件 key
+     */
+    public void deleteObject(String key) throws CosClientException {
+        cosClient.deleteObject(cosClientConfig.getBucket(), key);
+    }
+
 
 
 

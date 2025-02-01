@@ -7,6 +7,7 @@ import cn.hutool.json.JSONUtil;
 import com.argyle.argylepicturebackend.exception.BusinessException;
 import com.argyle.argylepicturebackend.exception.ErrorCode;
 import com.argyle.argylepicturebackend.exception.ThrowUtils;
+import com.argyle.argylepicturebackend.manager.CosManager;
 import com.argyle.argylepicturebackend.manager.upload.FilePictureUpload;
 import com.argyle.argylepicturebackend.manager.upload.PictureUploadTemplate;
 import com.argyle.argylepicturebackend.manager.upload.UrlPictureUpload;
@@ -32,12 +33,15 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.BeanUtils;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +56,7 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
-    implements PictureService{
+    implements PictureService {
     @Resource
     private UserService userService;
 
@@ -61,6 +65,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private UrlPictureUpload urlPictureUpload;
+
+    @Resource
+    private CosManager cosManager;
 
     @Override
     public void validPicture(Picture picture) {
@@ -92,7 +99,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             Picture oldPicture = this.getById(pictureId);
             ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
             //近本人和管理员可编辑图片
-            if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)){
+            if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
                 throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
             }
         }
@@ -109,6 +116,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());
         picture.setThumbnailUrl(uploadPictureResult.getThumbnailUrl());
+        picture.setOriginalUrl(uploadPictureResult.getOriginalUrl());
         String picName = uploadPictureResult.getPicName();
         if (pictureUploadRequest != null && StrUtil.isNotBlank(pictureUploadRequest.getPicName())) {
             picName = pictureUploadRequest.getPicName();
@@ -122,7 +130,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setPicFormat(uploadPictureResult.getPicFormat());
         picture.setUserId(loginUser.getId());
         // 设置分类和标签
-        if (pictureUploadRequest!= null) {
+        if (pictureUploadRequest != null) {
             picture.setCategory(pictureUploadRequest.getCategory());
             picture.setTags(JSONUtil.toJsonStr(pictureUploadRequest.getTags()));
         }
@@ -134,12 +142,18 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             // 如果是更新，需要补充 id 和编辑时间
             picture.setId(pictureId);
             picture.setEditTime(new Date());
+            Picture oldPicture = this.getById(pictureId);
+            if (oldPicture != null) {
+                // 清理图片
+                this.clearPictureFile(oldPicture);
+            }
         }
 
         boolean result = this.saveOrUpdate(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片上传失败");
         return PictureVO.objToVo(picture);
     }
+
     @Override
     public PictureVO getPictureVO(Picture picture, HttpServletRequest request) {
         // 对象转封装类
@@ -153,7 +167,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
         return pictureVO;
     }
-
 
 
     /**
@@ -248,6 +261,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     /**
      * 图片审核
+     *
      * @param pictureReviewRequest
      * @param loginUser
      */
@@ -296,7 +310,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         // 格式化数量
         Integer count = pictureUploadByBatchRequest.getCount();
         String namePrefix = pictureUploadByBatchRequest.getNamePrefix();
-        if (StrUtil.isBlank(namePrefix)){
+        if (StrUtil.isBlank(namePrefix)) {
             namePrefix = searchText;
         }
         int offset = pictureUploadByBatchRequest.getOffset() != null ? pictureUploadByBatchRequest.getOffset() : 0;
@@ -335,8 +349,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             // 上传图片
             PictureUploadRequest pictureUploadRequest = new PictureUploadRequest();
             pictureUploadRequest.setFileUrl(fileUrl);
-            if (StrUtil.isNotBlank(namePrefix)){
-                pictureUploadRequest.setPicName(namePrefix  + (uploadCount + 1));
+            if (StrUtil.isNotBlank(namePrefix)) {
+                pictureUploadRequest.setPicName(namePrefix + (uploadCount + 1));
             }
 
             // 设置分类和标签
@@ -357,10 +371,46 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         return uploadCount;
     }
 
+    /**
+     * 删除对象存储中的文件
+     * @param oldPicture
+     */
+    @Async
+    @Override
+    public void clearPictureFile(Picture oldPicture) {
+        // 判断该图片是否被多条记录使用
+        String pictureUrl = oldPicture.getUrl();
+        long count = this.lambdaQuery()
+                .eq(Picture::getUrl, pictureUrl)
+                .count();
+        // 有不止一条记录用到了该图片，不清理
+        if (count > 1) {
+            return;
+        }
+        try {
+            // 提取路径部分
+            String picturePath = new URL(pictureUrl).getPath();
+            cosManager.deleteObject(picturePath);
 
+            //删除原图
+            String originalUrl = oldPicture.getOriginalUrl();
+            if (StrUtil.isNotBlank(originalUrl)) {
+                String originalPath = new URL(originalUrl).getPath();
+                cosManager.deleteObject(originalPath);
+            }
+            // 清理缩略图
+            String thumbnailUrl = oldPicture.getThumbnailUrl();
+            if (StrUtil.isNotBlank(thumbnailUrl)) {
+                String thumbnailPath = new URL(thumbnailUrl).getPath();
+                cosManager.deleteObject(thumbnailPath);
+            }
+        } catch (MalformedURLException e) {
+            log.error("处理图片删除时遇到格式错误的 URL。图片 URL: {}", pictureUrl, e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "格式错误的 URL");
+        }
 
+    }
 }
-
 
 
 

@@ -1,81 +1,23 @@
 package com.argyle.argylepicturebackend.service;
 
-import com.argyle.argylepicturebackend.mapper.CategoryMapper;
-import com.argyle.argylepicturebackend.mapper.PictureMapper;
-import com.argyle.argylepicturebackend.mapper.TagMapper;
-import com.argyle.argylepicturebackend.model.entity.Category;
-import com.argyle.argylepicturebackend.model.entity.Tag;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import java.util.List;
+import java.util.Map;
 
-import org.springframework.stereotype.Service;
-
-import javax.annotation.Resource;
-import java.util.*;
-import java.util.stream.Collectors;
-
-@Service
-public class StatisticsService {
-    @Resource
-    private PictureMapper pictureMapper;
-    @Resource
-    private TagMapper tagMapper;
-    @Resource
-    private CategoryMapper categoryMapper;
-
-
+/**
+ * @Author: hjm
+ * @Date: 2025/02/01/20:07
+ * @Description:
+ */
+public interface StatisticsService {
     // 更新标签使用次数
-    public void updateTagUsageCount(List<String> tagNames) {
-        if (tagNames != null && !tagNames.isEmpty()) {
-            for (String tagName : tagNames) {
-                QueryWrapper<Tag> wrapper = new QueryWrapper<>();
-                wrapper.eq("name", tagName);
-                Tag tag = tagMapper.selectOne(wrapper);
-                if (tag != null) {
-                    tag.setUsageCount(tag.getUsageCount() + 1);
-                    tagMapper.updateById(tag);
-                }
-            }
-        }
-    }
+    void updateTagUsageCount(List<String> tagNames);
 
     // 更新分类使用次数
-    public void updateCategoryUsageCount(String categoryName) {
-        if (categoryName != null && !categoryName.isEmpty()) {
-            QueryWrapper<Category> wrapper = new QueryWrapper<>();
-            wrapper.eq("name", categoryName);
-            Category category = categoryMapper.selectOne(wrapper);
-            if (category != null) {
-                category.setUsageCount(category.getUsageCount() + 1);
-                categoryMapper.updateById(category);
-            }
-        }
-    }
+    void updateCategoryUsageCount(String categoryName);
 
     // 统计热门标签
-    public List<Map.Entry<String, Integer>> getPopularTags(int topN) {
-        QueryWrapper<Tag> wrapper = new QueryWrapper<>();
-        wrapper.orderByDesc("usageCount");
-        wrapper.last("limit " + topN);
-        List<Tag> tagList = tagMapper.selectList(wrapper);
-
-        return tagList.stream()
-               .collect(Collectors.toMap(Tag::getName, Tag::getUsageCount))
-               .entrySet().stream()
-               .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-               .collect(Collectors.toList());
-    }
+    List<Map.Entry<String, Integer>> getPopularTags(int topN);
 
     // 统计热门分类
-    public List<Map.Entry<String, Integer>> getPopularCategories(int topN) {
-        QueryWrapper<Category> wrapper = new QueryWrapper<>();
-        wrapper.orderByDesc("usageCount");
-        wrapper.last("limit " + topN);
-        List<Category> categoryList = categoryMapper.selectList(wrapper);
-
-        return categoryList.stream()
-               .collect(Collectors.toMap(Category::getName, Category::getUsageCount))
-               .entrySet().stream()
-               .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-               .collect(Collectors.toList());
-    }
+    List<Map.Entry<String, Integer>> getPopularCategories(int topN);
 }
