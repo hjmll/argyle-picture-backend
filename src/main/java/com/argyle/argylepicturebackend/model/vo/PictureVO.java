@@ -77,6 +77,12 @@ public class PictureVO implements Serializable {
     private Integer reviewStatus;
 
     /**
+     * 缩略图 url
+     */
+    private String thumbnailUrl;
+
+
+    /**
      * 创建时间
      */
     private Date createTime;

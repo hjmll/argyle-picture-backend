@@ -401,7 +401,4 @@ public class PictureController {
     }
 
 
-
-
-
 }
