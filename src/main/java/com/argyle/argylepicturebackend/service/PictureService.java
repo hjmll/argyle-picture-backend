@@ -1,11 +1,8 @@
 package com.argyle.argylepicturebackend.service;
 
-import com.argyle.argylepicturebackend.model.dto.picture.PictureReviewRequest;
-import com.argyle.argylepicturebackend.model.dto.picture.PictureUploadByBatchRequest;
+import com.argyle.argylepicturebackend.model.dto.picture.*;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.argyle.argylepicturebackend.model.dto.picture.PictureQueryRequest;
-import com.argyle.argylepicturebackend.model.dto.picture.PictureUploadRequest;
 import com.argyle.argylepicturebackend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.argyle.argylepicturebackend.model.entity.User;
@@ -64,4 +61,15 @@ public interface PictureService extends IService<Picture> {
 
     @Async
     void clearPictureFile(Picture oldPicture);
+
+    void deletePicture(long pictureId, User loginUser);
+
+    void editPicture(PictureEditRequest pictureEditRequest, User loginUser);
+
+    /**
+     * 校验空间图片的权限
+     * @param loginUser
+     * @param picture
+     */
+    void checkPictureAuth(User loginUser, Picture picture);
 }
