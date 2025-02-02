@@ -8,6 +8,7 @@ import com.argyle.argylepicturebackend.model.vo.SpaceVO;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -33,4 +34,8 @@ public interface SpaceService extends IService<Space> {
 
 
     void fillSpaceBySpaceLevel(Space space);
+
+
+    @Transactional(rollbackFor = Exception.class)
+    boolean deleteSpace(Long spaceId);
 }

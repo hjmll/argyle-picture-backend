@@ -15,6 +15,7 @@ import com.argyle.argylepicturebackend.model.entity.User;
 import com.argyle.argylepicturebackend.model.enums.SpaceLevelEnum;
 import com.argyle.argylepicturebackend.model.vo.SpaceVO;
 import com.argyle.argylepicturebackend.model.vo.UserVO;
+import com.argyle.argylepicturebackend.service.PictureService;
 import com.argyle.argylepicturebackend.service.SpaceService;
 import com.argyle.argylepicturebackend.service.UserService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -22,6 +23,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
@@ -44,6 +46,9 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private PictureService pictureService;
 
     @Resource
     private TransactionTemplate transactionTemplate;
@@ -200,6 +205,19 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         }
     }
 
+    /**
+     * 删除空间及其关联的图片
+     * @param spaceId 空间ID
+     * @return 删除是否成功
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public boolean deleteSpace(Long spaceId) {
+        // 删除关联的图片
+        pictureService.deletePicturesBySpaceId(spaceId);
+        // 删除空间
+        return this.removeById(spaceId);
+    }
 
 
 }

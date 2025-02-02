@@ -73,6 +73,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     private CosManager cosManager;
 
     @Resource
+    private PictureMapper pictureMapper;
+
+    @Resource
     private TransactionTemplate transactionTemplate;
 
     @Override
@@ -542,6 +545,18 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
             }
         }
+    }
+
+
+    /**
+     * 根据空间ID删除图片
+     * @param spaceId 空间ID
+     */
+    @Override
+    public void deletePicturesBySpaceId(Long spaceId) {
+        QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("spaceId", spaceId);
+        pictureMapper.delete(queryWrapper);
     }
 
 }

@@ -70,9 +70,8 @@ public class SpaceController {
         if (!oldSpace.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
-        // 操作数据库
-        boolean result = spaceService.removeById(id);
-
+        // 替换原有的删除操作为级联删除
+        boolean result = spaceService.deleteSpace(id);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
 
         return ResultUtils.success(true);
