@@ -9,12 +9,10 @@ import com.argyle.argylepicturebackend.constant.UserConstant;
 import com.argyle.argylepicturebackend.exception.BusinessException;
 import com.argyle.argylepicturebackend.exception.ErrorCode;
 import com.argyle.argylepicturebackend.exception.ThrowUtils;
-import com.argyle.argylepicturebackend.model.dto.space.SpaceAddRequest;
-import com.argyle.argylepicturebackend.model.dto.space.SpaceEditRequest;
-import com.argyle.argylepicturebackend.model.dto.space.SpaceQueryRequest;
-import com.argyle.argylepicturebackend.model.dto.space.SpaceUpdateRequest;
+import com.argyle.argylepicturebackend.model.dto.space.*;
 import com.argyle.argylepicturebackend.model.entity.Space;
 import com.argyle.argylepicturebackend.model.entity.User;
+import com.argyle.argylepicturebackend.model.enums.SpaceLevelEnum;
 import com.argyle.argylepicturebackend.model.vo.SpaceVO;
 import com.argyle.argylepicturebackend.service.SpaceService;
 import com.argyle.argylepicturebackend.service.TagService;
@@ -26,7 +24,10 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @Author: hjm
@@ -196,6 +197,23 @@ public class SpaceController {
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
+
+    /**
+     * 获取所有空间等级 便于空间展示
+     * @return
+     */
+    @GetMapping("/list/level")
+    public BaseResponse<List<SpaceLevel>> listSpaceLevel() {
+        List<SpaceLevel> spaceLevelList = Arrays.stream(SpaceLevelEnum.values()) // 获取所有枚举
+                .map(spaceLevelEnum -> new SpaceLevel(
+                        spaceLevelEnum.getValue(),
+                        spaceLevelEnum.getText(),
+                        spaceLevelEnum.getMaxCount(),
+                        spaceLevelEnum.getMaxSize()))
+                .collect(Collectors.toList());
+        return ResultUtils.success(spaceLevelList);
+    }
+
 
 
 
