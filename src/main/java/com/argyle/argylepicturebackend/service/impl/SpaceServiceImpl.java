@@ -19,10 +19,12 @@ import com.argyle.argylepicturebackend.service.PictureService;
 import com.argyle.argylepicturebackend.service.SpaceService;
 import com.argyle.argylepicturebackend.service.UserService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -219,6 +221,19 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         return this.removeById(spaceId);
     }
 
+    @Transactional(propagation = Propagation.MANDATORY)
+    @Override
+    public void adjustSpaceUsage(Long spaceId, long sizeDelta, int countDelta) {
+        if (spaceId == null) return;
+
+        LambdaUpdateWrapper<Space> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(Space::getId, spaceId)
+                .setSql("totalSize = totalSize + " + sizeDelta)
+                .setSql("totalCount = totalCount + " + countDelta);
+
+        boolean success = this.update(updateWrapper);
+        ThrowUtils.throwIf(!success, ErrorCode.OPERATION_ERROR, "空间额度更新失败");
+    }
 
 }
 

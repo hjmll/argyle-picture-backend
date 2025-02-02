@@ -24,6 +24,7 @@ import com.argyle.argylepicturebackend.service.PictureService;
 import com.argyle.argylepicturebackend.service.SpaceService;
 import com.argyle.argylepicturebackend.service.UserService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,8 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.BeanUtils;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
@@ -116,10 +119,16 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             }
 
         }
+
+        // 声明变量保存旧图片信息
+        Long oldPicSize;
+        Long oldSpaceId;
         // 用于判断是新增还是更新图片
-        Long pictureId = null;
+        Long pictureId;
         if (pictureUploadRequest != null) {
             pictureId = pictureUploadRequest.getId();
+        } else {
+            pictureId = null;
         }
         // 如果是更新图片，需要校验图片是否存在
         if (pictureId != null) {
@@ -141,6 +150,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                     throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间 id 不一致");
                 }
             }
+
+            // 保存旧图片的存储信息
+            oldPicSize = oldPicture.getPicSize();
+            oldSpaceId = oldPicture.getSpaceId();
+        } else {
+            oldPicSize = null;
+            oldSpaceId = null;
         }
 
         // 上传图片，得到信息
@@ -196,18 +212,45 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             }
         }
         //更新空间的使用额度
+        //// 开启事务
+        //Long finalSpaceId = spaceId;
+        //transactionTemplate.execute(status -> {
+        //    boolean result = this.saveOrUpdate(picture);
+        //    ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片上传失败");
+        //    if (finalSpaceId != null) {
+        //        boolean update = spaceService.lambdaUpdate()
+        //                .eq(Space::getId, finalSpaceId)
+        //                .setSql("totalSize = totalSize + " + picture.getPicSize())
+        //                .setSql("totalCount = totalCount + 1")
+        //                .update();
+        //        ThrowUtils.throwIf(!update, ErrorCode.OPERATION_ERROR, "额度更新失败");
+        //    }
+        //    return picture;
+        //});
+
         // 开启事务
-        Long finalSpaceId = spaceId;
         transactionTemplate.execute(status -> {
             boolean result = this.saveOrUpdate(picture);
             ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片上传失败");
-            if (finalSpaceId != null) {
-                boolean update = spaceService.lambdaUpdate()
-                        .eq(Space::getId, finalSpaceId)
-                        .setSql("totalSize = totalSize + " + picture.getPicSize())
-                        .setSql("totalCount = totalCount + 1")
-                        .update();
-                ThrowUtils.throwIf(!update, ErrorCode.OPERATION_ERROR, "额度更新失败");
+
+            // 获取最终空间ID（可能继承旧空间或使用新空间）
+            Long actualSpaceId = picture.getSpaceId() != null ? picture.getSpaceId() : oldSpaceId;
+
+            // 需要处理空间额度变更的情况
+            if (actualSpaceId != null) {
+                // 情况1：更新操作（新旧空间相同）
+                if (pictureId != null && ObjUtil.equal(actualSpaceId, oldSpaceId)) {
+                    long sizeDelta = picture.getPicSize() - oldPicSize;
+                    spaceService.adjustSpaceUsage(actualSpaceId, sizeDelta, 0);
+                }
+                // 情况2：更新操作（从无空间到有空间）
+                else if (pictureId != null && oldSpaceId == null) {
+                    spaceService.adjustSpaceUsage(actualSpaceId, picture.getPicSize(), 1);
+                }
+                // 情况3：更新操作（从有空间到无空间）
+                else if (pictureId == null) {
+                    spaceService.adjustSpaceUsage(actualSpaceId, picture.getPicSize(), 1);
+                }
             }
             return picture;
         });
