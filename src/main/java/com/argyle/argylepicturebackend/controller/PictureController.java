@@ -401,7 +401,8 @@ public class PictureController {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
         Picture oldPicture = pictureService.getById(pictureId);
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
-        List<ImageSearchResult> resultList = ImageSearchApiFacade.searchImage(oldPicture.getUrl());
+        String url = oldPicture.getUrl() + "?imageMogr2/format/png";
+        List<ImageSearchResult> resultList = ImageSearchApiFacade.searchImage(url);
         return ResultUtils.success(resultList);
     }
 
