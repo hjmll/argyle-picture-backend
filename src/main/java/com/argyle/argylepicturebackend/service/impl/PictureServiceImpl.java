@@ -24,6 +24,7 @@ import com.argyle.argylepicturebackend.service.PictureService;
 import com.argyle.argylepicturebackend.service.SpaceService;
 import com.argyle.argylepicturebackend.service.UserService;
 import com.argyle.argylepicturebackend.utils.ColorSimilarUtils;
+import com.argyle.argylepicturebackend.utils.ColorTransformUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -35,6 +36,7 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.BeanUtils;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
@@ -189,7 +191,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setPicScale(uploadPictureResult.getPicScale());
         picture.setPicFormat(uploadPictureResult.getPicFormat());
         picture.setUserId(loginUser.getId());
-        picture.setPicColor(uploadPictureResult.getPicColor());
+        picture.setPicColor(ColorTransformUtils.getStandardColor(uploadPictureResult.getPicColor()));
         // 设置分类和标签
         if (pictureUploadRequest != null) {
             picture.setCategory(pictureUploadRequest.getCategory());
@@ -649,6 +651,50 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 .map(PictureVO::objToVo)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest, User loginUser) {
+        List<Long> pictureIdList = pictureEditByBatchRequest.getPictureIdList();
+        Long spaceId = pictureEditByBatchRequest.getSpaceId();
+        String category = pictureEditByBatchRequest.getCategory();
+        List<String> tags = pictureEditByBatchRequest.getTags();
+
+        // 1. 校验参数
+        ThrowUtils.throwIf(spaceId == null || CollUtil.isEmpty(pictureIdList), ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
+        // 2. 校验空间权限
+        Space space = spaceService.getById(spaceId);
+        ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+        if (!loginUser.getId().equals(space.getUserId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "没有空间访问权限");
+        }
+
+        // 3. 查询指定图片，仅选择需要的字段
+        List<Picture> pictureList = this.lambdaQuery()
+                .select(Picture::getId, Picture::getSpaceId)
+                .eq(Picture::getSpaceId, spaceId)
+                .in(Picture::getId, pictureIdList)
+                .list();
+
+        if (pictureList.isEmpty()) {
+            return;
+        }
+        // 4. 更新分类和标签
+        pictureList.forEach(picture -> {
+            if (StrUtil.isNotBlank(category)) {
+                picture.setCategory(category);
+            }
+            if (CollUtil.isNotEmpty(tags)) {
+                picture.setTags(JSONUtil.toJsonStr(tags));
+            }
+        });
+
+        // 5. 批量更新
+        boolean result = this.updateBatchById(pictureList);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR,"批量编辑失败");
+    }
+
 
 
 }
