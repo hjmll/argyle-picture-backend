@@ -1,6 +1,5 @@
 package com.argyle.argylepicturebackend.manager.upload;
 
-import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpStatus;
@@ -79,7 +78,16 @@ public class UrlPictureUpload extends PictureUploadTemplate {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件地址格式不正确");
         }
         // 从 URL 中提取文件名
-        return fileUrl;
+        return getValidFileName(fileUrl);
+    }
+
+    private String getValidFileName(String originFilename){
+        int queryIndex = originFilename.indexOf('?');
+        if (queryIndex != -1){
+            originFilename = originFilename.substring(0, queryIndex);
+        }
+        return originFilename;
+
     }
 
     @Override
