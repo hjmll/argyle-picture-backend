@@ -1,5 +1,6 @@
 package com.argyle.argylepicturebackend.service;
 
+import com.argyle.argylepicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
 import com.argyle.argylepicturebackend.model.dto.picture.*;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -81,4 +82,9 @@ public interface PictureService extends IService<Picture> {
 
     @Transactional(rollbackFor = Exception.class)
     void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest, User loginUser);
+
+    /**
+     * 创建AI扩图任务
+     */
+    CreateOutPaintingTaskResponse createPictureOutPaintingTask(CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest, User loginUser);
 }

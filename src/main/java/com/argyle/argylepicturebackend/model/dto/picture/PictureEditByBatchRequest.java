@@ -8,10 +8,7 @@ import java.util.List;
 @Data
 public class PictureEditByBatchRequest implements Serializable {
 
-    /**
-     * 命名规则
-     */
-    private String nameRule;
+
 
 
     /**
@@ -33,6 +30,11 @@ public class PictureEditByBatchRequest implements Serializable {
      * 标签
      */
     private List<String> tags;
+
+    /**
+     * 命名规则
+     */
+    private String nameRule;
 
     private static final long serialVersionUID = 1L;
 }

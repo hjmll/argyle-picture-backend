@@ -58,3 +58,5 @@ knife4j:
           - com.argyle.argylepicturebackend.controller
 cache:
   type: redis
+
+
