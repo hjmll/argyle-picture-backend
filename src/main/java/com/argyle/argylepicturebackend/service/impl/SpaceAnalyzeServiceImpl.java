@@ -18,6 +18,7 @@ import com.argyle.argylepicturebackend.service.SpaceService;
 import com.argyle.argylepicturebackend.service.UserService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.LinkedHashMap;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
  * @Date: 2025/02/05/19:54
  * @Description:
  */
+@Service
 public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space> implements SpaceAnalyzeService{
     @Resource
     private UserService userService;
@@ -223,8 +225,8 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space> imp
         Map<String, Long> sizeRanges = new LinkedHashMap<>();
         sizeRanges.put("<100KB", picSizes.stream().filter(size -> size < 100 * 1024).count());
         sizeRanges.put("100KB-500KB", picSizes.stream().filter(size -> size >= 100 * 1024 && size < 500 * 1024).count());
-        sizeRanges.put("500KB-1MB", picSizes.stream().filter(size -> size >= 500 * 1024 && size < 1 * 1024 * 1024).count());
-        sizeRanges.put(">1MB", picSizes.stream().filter(size -> size >= 1 * 1024 * 1024).count());
+        sizeRanges.put("500KB-1MB", picSizes.stream().filter(size -> size >= 500 * 1024 && size < 1024 * 1024).count());
+        sizeRanges.put(">1MB", picSizes.stream().filter(size -> size >= 1024 * 1024).count());
 
         // 转换为响应对象
         return sizeRanges.entrySet().stream()
@@ -240,32 +242,33 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space> imp
 
         // 构造查询条件
         QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
+        fillAnalyzeQueryWrapper(spaceUserAnalyzeRequest, queryWrapper);
+        // 补充用户 id 查询
         Long userId = spaceUserAnalyzeRequest.getUserId();
         queryWrapper.eq(ObjUtil.isNotNull(userId), "userId", userId);
-        fillAnalyzeQueryWrapper(spaceUserAnalyzeRequest, queryWrapper);
-
-        // 分析维度：每日、每周、每月
+        // 补充分析维度：每日、每周、每月
         String timeDimension = spaceUserAnalyzeRequest.getTimeDimension();
         switch (timeDimension) {
             case "day":
-                queryWrapper.select("DATE_FORMAT(createTime, '%Y-%m-%d') AS period", "COUNT(*) AS count");
+                queryWrapper.select("DATE_FORMAT(createTime, '%Y-%m-%d') as period", "count(*) as count");
                 break;
             case "week":
-                queryWrapper.select("YEARWEEK(createTime) AS period", "COUNT(*) AS count");
+                queryWrapper.select("YEARWEEK(createTime) as period", "count(*) as count");
                 break;
             case "month":
-                queryWrapper.select("DATE_FORMAT(createTime, '%Y-%m') AS period", "COUNT(*) AS count");
+                queryWrapper.select("DATE_FORMAT(createTime, '%Y-%m') as period", "count(*) as count");
                 break;
             default:
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "不支持的时间维度");
         }
 
-        // 分组和排序
+        // 分组排序
         queryWrapper.groupBy("period").orderByAsc("period");
 
-        // 查询结果并转换
+        // 查询并封装结果
         List<Map<String, Object>> queryResult = pictureService.getBaseMapper().selectMaps(queryWrapper);
-        return queryResult.stream()
+        return queryResult
+                .stream()
                 .map(result -> {
                     String period = result.get("period").toString();
                     Long count = ((Number) result.get("count")).longValue();
@@ -273,7 +276,6 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space> imp
                 })
                 .collect(Collectors.toList());
     }
-
     /**
      * 获取空间使用分析
      */
