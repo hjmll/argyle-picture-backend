@@ -1,17 +1,21 @@
 package com.argyle.argylepicturebackend.service.impl;
 
 import cn.hutool.core.util.NumberUtil;
+import cn.hutool.core.util.ObjUtil;
+import cn.hutool.json.JSONUtil;
 import com.argyle.argylepicturebackend.exception.BusinessException;
 import com.argyle.argylepicturebackend.exception.ErrorCode;
 import com.argyle.argylepicturebackend.exception.ThrowUtils;
 import com.argyle.argylepicturebackend.mapper.SpaceMapper;
 import com.argyle.argylepicturebackend.model.dto.space.analyze.SpaceAnalyzeRequest;
 import com.argyle.argylepicturebackend.model.dto.space.analyze.SpaceCategoryAnalyzeRequest;
+import com.argyle.argylepicturebackend.model.dto.space.analyze.SpaceTagAnalyzeRequest;
 import com.argyle.argylepicturebackend.model.dto.space.analyze.SpaceUsageAnalyzeRequest;
 import com.argyle.argylepicturebackend.model.entity.Picture;
 import com.argyle.argylepicturebackend.model.entity.Space;
 import com.argyle.argylepicturebackend.model.entity.User;
 import com.argyle.argylepicturebackend.model.vo.space.analyze.SpaceCategoryAnalyzeResponse;
+import com.argyle.argylepicturebackend.model.vo.space.analyze.SpaceTagAnalyzeResponse;
 import com.argyle.argylepicturebackend.model.vo.space.analyze.SpaceUsageAnalyzeResponse;
 import com.argyle.argylepicturebackend.service.PictureService;
 import com.argyle.argylepicturebackend.service.SpaceAnalyzeService;
@@ -22,6 +26,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -166,6 +171,38 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space> imp
         }
         throw new BusinessException(ErrorCode.PARAMS_ERROR, "未指定查询范围");
     }
+
+    @Override
+    public List<SpaceTagAnalyzeResponse> getSpaceTagAnalyze(SpaceTagAnalyzeRequest spaceTagAnalyzeRequest, User loginUser) {
+        ThrowUtils.throwIf(spaceTagAnalyzeRequest == null, ErrorCode.PARAMS_ERROR);
+
+        // 检查权限
+        checkSpaceAnalyzeAuth(spaceTagAnalyzeRequest, loginUser);
+
+        // 构造查询条件
+        QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
+        fillAnalyzeQueryWrapper(spaceTagAnalyzeRequest, queryWrapper);
+
+        // 查询所有符合条件的标签
+        queryWrapper.select("tags");
+        List<String> tagsJsonList = pictureService.getBaseMapper().selectObjs(queryWrapper)
+                .stream()
+                .filter(ObjUtil::isNotNull)
+                .map(Object::toString)
+                .collect(Collectors.toList());
+
+        // 合并所有标签并统计使用次数
+        Map<String, Long> tagCountMap = tagsJsonList.stream()
+                .flatMap(tagsJson -> JSONUtil.toList(tagsJson, String.class).stream())
+                .collect(Collectors.groupingBy(tag -> tag, Collectors.counting()));
+
+        // 转换为响应对象，按使用次数降序排序
+        return tagCountMap.entrySet().stream()
+                .sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue())) // 降序排列
+                .map(entry -> new SpaceTagAnalyzeResponse(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
+    }
+
 
 
 
