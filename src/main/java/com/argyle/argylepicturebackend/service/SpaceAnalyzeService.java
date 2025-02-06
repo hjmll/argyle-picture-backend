@@ -1,15 +1,9 @@
 package com.argyle.argylepicturebackend.service;
 
-import com.argyle.argylepicturebackend.model.dto.space.analyze.SpaceCategoryAnalyzeRequest;
-import com.argyle.argylepicturebackend.model.dto.space.analyze.SpaceSizeAnalyzeRequest;
-import com.argyle.argylepicturebackend.model.dto.space.analyze.SpaceTagAnalyzeRequest;
-import com.argyle.argylepicturebackend.model.dto.space.analyze.SpaceUsageAnalyzeRequest;
+import com.argyle.argylepicturebackend.model.dto.space.analyze.*;
 import com.argyle.argylepicturebackend.model.entity.Space;
 import com.argyle.argylepicturebackend.model.entity.User;
-import com.argyle.argylepicturebackend.model.vo.space.analyze.SpaceCategoryAnalyzeResponse;
-import com.argyle.argylepicturebackend.model.vo.space.analyze.SpaceSizeAnalyzeResponse;
-import com.argyle.argylepicturebackend.model.vo.space.analyze.SpaceTagAnalyzeResponse;
-import com.argyle.argylepicturebackend.model.vo.space.analyze.SpaceUsageAnalyzeResponse;
+import com.argyle.argylepicturebackend.model.vo.space.analyze.*;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
@@ -28,4 +22,6 @@ public interface SpaceAnalyzeService extends IService<Space> {
     List<SpaceTagAnalyzeResponse> getSpaceTagAnalyze(SpaceTagAnalyzeRequest spaceTagAnalyzeRequest, User loginUser);
 
     List<SpaceSizeAnalyzeResponse> getSpaceSizeAnalyze(SpaceSizeAnalyzeRequest spaceSizeAnalyzeRequest, User loginUser);
+
+    List<SpaceUserAnalyzeResponse> getSpaceUserAnalyze(SpaceUserAnalyzeRequest spaceUserAnalyzeRequest, User loginUser);
 }
