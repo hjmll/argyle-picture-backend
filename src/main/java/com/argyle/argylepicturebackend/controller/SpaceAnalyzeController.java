@@ -5,6 +5,7 @@ import com.argyle.argylepicturebackend.common.ResultUtils;
 import com.argyle.argylepicturebackend.exception.ErrorCode;
 import com.argyle.argylepicturebackend.exception.ThrowUtils;
 import com.argyle.argylepicturebackend.model.dto.space.analyze.*;
+import com.argyle.argylepicturebackend.model.entity.Space;
 import com.argyle.argylepicturebackend.model.entity.User;
 import com.argyle.argylepicturebackend.model.vo.space.analyze.*;
 import com.argyle.argylepicturebackend.service.SpaceAnalyzeService;
@@ -66,6 +67,12 @@ public class SpaceAnalyzeController {
         return ResultUtils.success(resultList);
     }
 
+    /**
+     * 获取用户空间行为分析
+     * @param spaceUserAnalyzeRequest
+     * @param request
+     * @return
+     */
     @PostMapping("/user")
     public BaseResponse<List<SpaceUserAnalyzeResponse>> getSpaceUserAnalyze(@RequestBody SpaceUserAnalyzeRequest spaceUserAnalyzeRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(spaceUserAnalyzeRequest == null, ErrorCode.PARAMS_ERROR);
@@ -73,6 +80,21 @@ public class SpaceAnalyzeController {
         List<SpaceUserAnalyzeResponse> resultList = spaceAnalyzeService.getSpaceUserAnalyze(spaceUserAnalyzeRequest, loginUser);
         return ResultUtils.success(resultList);
     }
+
+    /**
+     * 获取空间排名分析
+     * @param spaceRankAnalyzeRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/rank")
+    public BaseResponse<List<Space>> getSpaceRankAnalyze(@RequestBody SpaceRankAnalyzeRequest spaceRankAnalyzeRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(spaceRankAnalyzeRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        List<Space> resultList = spaceAnalyzeService.getSpaceRankAnalyze(spaceRankAnalyzeRequest, loginUser);
+        return ResultUtils.success(resultList);
+    }
+
 
 
 
