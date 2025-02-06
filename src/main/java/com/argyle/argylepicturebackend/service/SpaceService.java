@@ -43,4 +43,11 @@ public interface SpaceService extends IService<Space> {
 
     @Transactional(propagation = Propagation.MANDATORY)
     void adjustSpaceUsage(Long spaceId, long sizeDelta, int countDelta);
+
+    /**
+     * 校验空间权限
+     * @param loginUser
+     * @param space
+     */
+    void checkSpaceAuth(User loginUser, Space space);
 }
