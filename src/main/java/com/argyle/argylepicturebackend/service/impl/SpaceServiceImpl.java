@@ -11,13 +11,16 @@ import com.argyle.argylepicturebackend.mapper.SpaceMapper;
 import com.argyle.argylepicturebackend.model.dto.space.SpaceAddRequest;
 import com.argyle.argylepicturebackend.model.dto.space.SpaceQueryRequest;
 import com.argyle.argylepicturebackend.model.entity.Space;
+import com.argyle.argylepicturebackend.model.entity.SpaceUser;
 import com.argyle.argylepicturebackend.model.entity.User;
 import com.argyle.argylepicturebackend.model.enums.SpaceLevelEnum;
+import com.argyle.argylepicturebackend.model.enums.SpaceRoleEnum;
 import com.argyle.argylepicturebackend.model.enums.SpaceTypeEnum;
 import com.argyle.argylepicturebackend.model.vo.SpaceVO;
 import com.argyle.argylepicturebackend.model.vo.UserVO;
 import com.argyle.argylepicturebackend.service.PictureService;
 import com.argyle.argylepicturebackend.service.SpaceService;
+import com.argyle.argylepicturebackend.service.SpaceUserService;
 import com.argyle.argylepicturebackend.service.UserService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -53,6 +56,8 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
     @Lazy
     @Resource
     private PictureService pictureService;
+
+    @Resource private SpaceUserService spaceUserService;
 
     @Resource
     private TransactionTemplate transactionTemplate;
@@ -132,6 +137,15 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                 // 写入数据库
                 boolean result = this.save(space);
                 ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+                //创建成功后，如果是团队空间，关联新增团队成员记录
+                if (SpaceTypeEnum.TEAM.getValue() == space.getSpaceType()) {
+                    SpaceUser spaceUser = new SpaceUser();
+                    spaceUser.setSpaceId(space.getId());
+                    spaceUser.setUserId(userId);
+                    spaceUser.setSpaceRole(SpaceRoleEnum.ADMIN.getValue());
+                    boolean save = spaceUserService.save(spaceUser);
+                    ThrowUtils.throwIf(!save, ErrorCode.OPERATION_ERROR, "创建团队成员记录失败");
+                }
                 // 返回新写入的数据 id
                 return space.getId();
             });
