@@ -1,7 +1,14 @@
 package com.argyle.argylepicturebackend.service;
 
+import com.argyle.argylepicturebackend.model.dto.spaceuser.SpaceUserAddRequest;
+import com.argyle.argylepicturebackend.model.dto.spaceuser.SpaceUserQueryRequest;
 import com.argyle.argylepicturebackend.model.entity.SpaceUser;
+import com.argyle.argylepicturebackend.model.vo.SpaceUserVO;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
 * @author hjm
@@ -10,4 +17,13 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface SpaceUserService extends IService<SpaceUser> {
 
+    long addSpaceUser(SpaceUserAddRequest spaceUserAddRequest);
+
+    void validSpaceUser(SpaceUser spaceUser, boolean add);
+
+    QueryWrapper<SpaceUser> getQueryWrapper(SpaceUserQueryRequest spaceUserQueryRequest);
+
+    SpaceUserVO getSpaceUserVO(SpaceUser spaceUser, HttpServletRequest request);
+
+    List<SpaceUserVO> getSpaceUserVOList(List<SpaceUser> spaceUserList);
 }
