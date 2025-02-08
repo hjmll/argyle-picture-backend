@@ -1,5 +1,7 @@
 package com.argyle.argylepicturebackend.exception;
 
+import cn.dev33.satoken.exception.NotLoginException;
+import cn.dev33.satoken.exception.NotPermissionException;
 import com.argyle.argylepicturebackend.common.BaseResponse;
 import com.argyle.argylepicturebackend.common.ResultUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
     @ExceptionHandler(BusinessException.class)
     public BaseResponse<?> businessExceptionHandler(BusinessException e){
         log.error("BusinessException",e);
