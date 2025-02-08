@@ -8,6 +8,7 @@ import com.argyle.argylepicturebackend.api.aliyunai.model.CreateOutPaintingTaskR
 import com.argyle.argylepicturebackend.api.aliyunai.model.GetOutPaintingTaskResponse;
 import com.argyle.argylepicturebackend.api.imagesearch.ImageSearchApiFacade;
 import com.argyle.argylepicturebackend.api.imagesearch.model.ImageSearchResult;
+import com.argyle.argylepicturebackend.manager.auth.SpaceUserAuthManager;
 import com.argyle.argylepicturebackend.manager.auth.StpKit;
 import com.argyle.argylepicturebackend.manager.auth.annotation.SaSpaceCheckPermission;
 import com.argyle.argylepicturebackend.manager.auth.model.SpaceUserPermissionConstant;
@@ -74,6 +75,9 @@ public class PictureController {
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private SpaceUserAuthManager spaceUserAuthManager;
 
     @Resource
     private AliYunAiApi aliYunAiApi;
@@ -198,13 +202,20 @@ public class PictureController {
         ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
         // 空间权限校验
         Long spaceId = picture.getSpaceId();
+        Space space = null;
         if (spaceId != null) {
             boolean hasPermission = StpKit.SPACE.hasPermission(SpaceUserPermissionConstant.PICTURE_VIEW);
             ThrowUtils.throwIf(!hasPermission, ErrorCode.NO_AUTH_ERROR);
             //User loginUser = userService.getLoginUser(request);
             //已改为使用注解鉴权
             //pictureService.checkPictureAuth(loginUser, picture);
+            space = spaceService.getById(spaceId);
+            ThrowUtils.throwIf(space == null,ErrorCode.NOT_FOUND_ERROR,"空间不存在");
         }
+        User loginUser = userService.getLoginUser(request);
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
+        PictureVO pictureVO = pictureService.getPictureVO(picture, request);
+        pictureVO.setPermissionList(permissionList);
 
         // 新增审核状态校验：非管理员用户只能查看已通过的图片
         if (PictureReviewStatusEnum.PASS.getValue() != picture.getReviewStatus()) {
@@ -212,7 +223,7 @@ public class PictureController {
             ThrowUtils.throwIf(true, ErrorCode.NOT_FOUND_ERROR);
         }
         // 获取封装类
-        return ResultUtils.success(pictureService.getPictureVO(picture, request));
+        return ResultUtils.success(pictureVO);
     }
 
     /**
