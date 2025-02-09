@@ -22,8 +22,10 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.argyle.argylepicturebackend.model.entity.SpaceUser;
 import com.argyle.argylepicturebackend.mapper.SpaceUserMapper;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.List;
@@ -40,8 +42,11 @@ import java.util.stream.Collectors;
 public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser>
     implements SpaceUserService {
 
+    @Resource
     private UserService userService;
 
+    @Resource
+    @Lazy
     private SpaceService spaceService;
 
 

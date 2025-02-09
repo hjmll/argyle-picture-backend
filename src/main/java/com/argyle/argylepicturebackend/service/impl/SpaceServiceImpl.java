@@ -7,6 +7,7 @@ import cn.hutool.core.util.StrUtil;
 import com.argyle.argylepicturebackend.exception.BusinessException;
 import com.argyle.argylepicturebackend.exception.ErrorCode;
 import com.argyle.argylepicturebackend.exception.ThrowUtils;
+import com.argyle.argylepicturebackend.manager.sharding.DynamicShardingManager;
 import com.argyle.argylepicturebackend.mapper.SpaceMapper;
 import com.argyle.argylepicturebackend.model.dto.space.SpaceAddRequest;
 import com.argyle.argylepicturebackend.model.dto.space.SpaceQueryRequest;
@@ -57,7 +58,12 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
     @Resource
     private PictureService pictureService;
 
-    @Resource private SpaceUserService spaceUserService;
+    @Resource
+    private SpaceUserService spaceUserService;
+
+    @Lazy
+    @Resource
+    private DynamicShardingManager dynamicShardingManager;
 
     @Resource
     private TransactionTemplate transactionTemplate;
@@ -146,6 +152,8 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                     boolean save = spaceUserService.save(spaceUser);
                     ThrowUtils.throwIf(!save, ErrorCode.OPERATION_ERROR, "创建团队成员记录失败");
                 }
+                //创建分表
+                dynamicShardingManager.createSpacePictureTable(space);
                 // 返回新写入的数据 id
                 return space.getId();
             });
