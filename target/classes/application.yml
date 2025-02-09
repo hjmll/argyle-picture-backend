@@ -33,15 +33,14 @@ spring:
       max-file-size: 10MB
   profiles:
     active: local
-
   # 空间图片分表
   shardingsphere:
     datasource:
       names: argyle_picture
-      yu_picture:
+      argyle_picture:
         type: com.zaxxer.hikari.HikariDataSource
         driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://localhost:3306/argyle_picture
+        url: jdbc:mysql://localhost:3306/argyle_picture?useSSL=false&allowPublicKeyRetrieval=true
         username: root
         password: root
     rules:
@@ -70,11 +69,12 @@ mybatis-plus:
     # 仅在开发环境打印日志
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
+    enable-sql-runner: true
     db-config:
       logic-delete-field: isDelete
       logic-delete-value: 1
       logic-not-delete-value: 0
-    enable-sql-runner: true
+
 
   #接口文档配置
 knife4j:
