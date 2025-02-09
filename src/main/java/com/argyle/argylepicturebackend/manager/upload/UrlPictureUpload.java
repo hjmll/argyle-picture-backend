@@ -70,13 +70,14 @@ public class UrlPictureUpload extends PictureUploadTemplate {
     @Override
     protected String getOriginFilename(Object inputSource) {
         String fileUrl = (String) inputSource;
-        URL url = null;
-        try {
-            url = new URL(fileUrl);
-            fileUrl = url.getFile().substring(url.getFile().lastIndexOf('/'));
-        } catch (MalformedURLException e) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件地址格式不正确");
-        }
+        //URL url = null;
+        //try {
+        //    url = new URL(fileUrl);
+        //    fileUrl = url.getFile().substring(url.getFile().lastIndexOf('/'));
+        //} catch (MalformedURLException e) {
+        //    throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件地址格式不正确");
+        //}
+        fileUrl = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
         // 从 URL 中提取文件名
         return getValidFileName(fileUrl);
     }

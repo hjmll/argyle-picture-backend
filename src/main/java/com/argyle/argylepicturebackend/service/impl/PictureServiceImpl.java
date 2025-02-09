@@ -112,10 +112,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         if (spaceId != null){
             Space space = spaceService.getById(spaceId);
             ThrowUtils.throwIf(space == null, ErrorCode.PARAMS_ERROR, "空间不存在");
-            //校验是否有空间的权限 仅空间管理员上传
-            if (!space.getUserId().equals(loginUser.getId())) {
-                throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "没有空间权限");
-            }
+            ////校验是否有空间的权限 仅空间管理员上传
+            //if (!space.getUserId().equals(loginUser.getId())) {
+            //    throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "没有空间权限");
+            //}
             //校验空间额度
             if (space.getTotalCount() >= space.getMaxCount()){
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间额度不足");
