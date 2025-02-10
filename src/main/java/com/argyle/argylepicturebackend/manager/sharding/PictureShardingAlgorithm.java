@@ -9,7 +9,7 @@ import java.util.Collection;
 import java.util.Properties;
 
 /**
- * 图片分表算法实现
+ * 图片分表算法
  */
 public class PictureShardingAlgorithm implements StandardShardingAlgorithm<Long> {
 

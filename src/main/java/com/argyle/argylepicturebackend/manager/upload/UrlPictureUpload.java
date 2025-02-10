@@ -91,6 +91,8 @@ public class UrlPictureUpload extends PictureUploadTemplate {
 
     }
 
+
+
     @Override
     protected void processFile(Object inputSource, File file) throws Exception {
         String fileUrl = (String) inputSource;
