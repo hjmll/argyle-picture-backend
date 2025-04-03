@@ -9,6 +9,7 @@ import com.argyle.argylepicturebackend.service.UserService;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -23,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
  * @Description:
  */
 @Aspect
+@Order(2)
 @Component
 public class AuthInterceptor {
     @Resource

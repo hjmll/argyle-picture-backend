@@ -61,9 +61,9 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
     @Resource
     private SpaceUserService spaceUserService;
 
-    @Lazy
-    @Resource
-    private DynamicShardingManager dynamicShardingManager;
+    //@Lazy
+    //@Resource
+    //private DynamicShardingManager dynamicShardingManager;
 
     @Resource
     private TransactionTemplate transactionTemplate;
@@ -153,7 +153,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                     ThrowUtils.throwIf(!save, ErrorCode.OPERATION_ERROR, "创建团队成员记录失败");
                 }
                 //创建分表
-                dynamicShardingManager.createSpacePictureTable(space);
+               // dynamicShardingManager.createSpacePictureTable(space);
                 // 返回新写入的数据 id
                 return space.getId();
             });

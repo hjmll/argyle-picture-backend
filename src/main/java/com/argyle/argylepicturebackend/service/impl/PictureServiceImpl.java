@@ -210,7 +210,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         // 如果 pictureId 不为空，表示更新，否则是新增
         if (pictureId != null) {
             // 如果是更新，需要补充 id 和编辑时间
-            //picture.setId(pictureId);
+            picture.setId(pictureId);
             //picture.setId(null);
             picture.setEditTime(new Date());
             Picture oldPicture = this.getById(pictureId);
