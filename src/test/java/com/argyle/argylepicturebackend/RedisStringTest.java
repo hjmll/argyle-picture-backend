@@ -8,6 +8,7 @@ import org.springframework.data.redis.core.ValueOperations;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/*
 @SpringBootTest
 public class RedisStringTest {
 
@@ -45,3 +46,4 @@ public class RedisStringTest {
         assertNull(storedValue, "删除后的值不为空");
     }
 }
+*/

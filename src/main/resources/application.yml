@@ -13,11 +13,11 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/argyle_picture
-    password: root
     username: root
+    password: 123456
     # Redis 配置
   redis:
-    database: 0
+    database: 1
     host: 127.0.0.1
     port: 6379
     timeout: 5000
@@ -42,7 +42,7 @@ spring:
         driver-class-name: com.mysql.cj.jdbc.Driver
         url: jdbc:mysql://localhost:3306/argyle_picture?useSSL=false&allowPublicKeyRetrieval=true
         username: root
-        password: root
+        password: 123456
     rules:
       sharding:
         tables:

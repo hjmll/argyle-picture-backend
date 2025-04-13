@@ -5,25 +5,26 @@ create database if not exists argyle_picture;
 use argyle_picture;
 
 -- 用户表
-create table if not exists user
+-- 用户表（修正版）
+CREATE TABLE IF NOT EXISTS `user`
 (
-    id           bigint auto_increment comment 'id' primary key,
-    userAccount  varchar(256)                           not null comment '账号',
-    userPassword varchar(512)                           not null comment '密码',
-    userName     varchar(256)                           null comment '用户昵称',
-    userAvatar   varchar(1024)                          null comment '用户头像',
-    userProfile  varchar(512)                           null comment '用户简介',
-    userRole     varchar(256) default 'user'            not null comment '用户角色：user/admin',
-    editTime     datetime     default CURRENT_TIMESTAMP not null comment '编辑时间',
-    createTime   datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
-    updateTime   datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    isDelete     tinyint      default 0                 not null comment '是否删除',
-    vipExpireTime datetime     null comment '会员过期时间',
-    vipCode       varchar(128) null comment '会员兑换码',
-    vipNumber     bigint       null comment '会员编号'
-    UNIQUE KEY uk_userAccount (userAccount),
-    INDEX idx_userName (userName)
-) comment '用户' collate = utf8mb4_unicode_ci;
+    `id`            BIGINT AUTO_INCREMENT COMMENT 'id' PRIMARY KEY,
+    `userAccount`   VARCHAR(256)                           NOT NULL COMMENT '账号',
+    `userPassword`  VARCHAR(512)                           NOT NULL COMMENT '密码',
+    `userName`      VARCHAR(256)                           NULL COMMENT '用户昵称',
+    `userAvatar`    VARCHAR(1024)                          NULL COMMENT '用户头像',
+    `userProfile`   VARCHAR(512)                           NULL COMMENT '用户简介',
+    `userRole`      VARCHAR(256) DEFAULT 'user'            NOT NULL COMMENT '用户角色：user/admin',
+    `editTime`      DATETIME     DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '编辑时间',
+    `createTime`    DATETIME     DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
+    `updateTime`    DATETIME     DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `isDelete`      TINYINT      DEFAULT 0                 NOT NULL COMMENT '是否删除',
+    `vipExpireTime` DATETIME                               NULL COMMENT '会员过期时间',
+    `vipCode`       VARCHAR(128)                           NULL COMMENT '会员兑换码',
+    `vipNumber`     BIGINT                                 NULL COMMENT '会员编号', -- 这里缺少了逗号
+    UNIQUE KEY `uk_userAccount` (`userAccount`),
+    INDEX `idx_userName` (`userName`)
+) COMMENT '用户表' COLLATE = 'utf8mb4_unicode_ci';
 
 -- 图片表
 create table if not exists picture
@@ -54,10 +55,10 @@ create table if not exists picture
 
 ALTER TABLE picture
     -- 添加新列
-    ADD COLUMN reviewStatus INT DEFAULT 0 NOT NULL COMMENT '审核状态：0-待审核; 1-通过; 2-拒绝',
-    ADD COLUMN reviewMessage VARCHAR(512) NULL COMMENT '审核信息',
-    ADD COLUMN reviewerId BIGINT NULL COMMENT '审核人 ID',
-    ADD COLUMN reviewTime DATETIME NULL COMMENT '审核时间';
+    ADD COLUMN reviewStatus  INT DEFAULT 0 NOT NULL COMMENT '审核状态：0-待审核; 1-通过; 2-拒绝',
+    ADD COLUMN reviewMessage VARCHAR(512)  NULL COMMENT '审核信息',
+    ADD COLUMN reviewerId    BIGINT        NULL COMMENT '审核人 ID',
+    ADD COLUMN reviewTime    DATETIME      NULL COMMENT '审核时间';
 
 -- 创建基于 reviewStatus 列的索引
 CREATE INDEX idx_reviewStatus ON picture (reviewStatus);
@@ -90,7 +91,7 @@ create table if not exists space
 
 -- 添加新列
 ALTER TABLE picture
-    ADD COLUMN spaceId bigint  null comment '空间 id（为空表示公共空间）';
+    ADD COLUMN spaceId bigint null comment '空间 id（为空表示公共空间）';
 
 -- 创建索引
 CREATE INDEX idx_spaceId ON picture (spaceId);

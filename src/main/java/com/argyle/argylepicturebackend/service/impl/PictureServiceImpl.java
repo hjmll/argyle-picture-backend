@@ -29,6 +29,7 @@ import com.argyle.argylepicturebackend.service.SpaceService;
 import com.argyle.argylepicturebackend.service.UserService;
 import com.argyle.argylepicturebackend.utils.ColorSimilarUtils;
 import com.argyle.argylepicturebackend.utils.ColorTransformUtils;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -55,14 +56,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
-* @author hjm
-* @description 针对表【picture(图片)】的数据库操作Service实现
-* @createDate 2025-01-25 17:09:12
-*/
+ * @author hjm
+ * @description 针对表【picture(图片)】的数据库操作Service实现
+ * @createDate 2025-01-25 17:09:12
+ */
 @Service
 @Slf4j
 public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
-    implements PictureService {
+        implements PictureService {
     @Resource
     private UserService userService;
 
@@ -104,12 +105,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
     }
 
+    @Transactional
     @Override
     public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
         //校验空间是否存在
         Long spaceId = pictureUploadRequest.getSpaceId();
-        if (spaceId != null){
+        if (spaceId != null) {
             Space space = spaceService.getById(spaceId);
             ThrowUtils.throwIf(space == null, ErrorCode.PARAMS_ERROR, "空间不存在");
             ////校验是否有空间的权限 仅空间管理员上传
@@ -117,10 +119,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             //    throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "没有空间权限");
             //}
             //校验空间额度
-            if (space.getTotalCount() >= space.getMaxCount()){
+            if (space.getTotalCount() >= space.getMaxCount()) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间额度不足");
             }
-            if (space.getTotalSize() >= space.getMaxSize()){
+            if (space.getTotalSize() >= space.getMaxSize()) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间容量不足");
             }
 
@@ -207,18 +209,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         //补充审核参数
         this.fillReviewParams(picture, loginUser);
         //操作数据库
-        // 如果 pictureId 不为空，表示更新，否则是新增
-        if (pictureId != null) {
-            // 如果是更新，需要补充 id 和编辑时间
-            picture.setId(pictureId);
-            //picture.setId(null);
-            picture.setEditTime(new Date());
-            Picture oldPicture = this.getById(pictureId);
-            if (oldPicture != null) {
-                // 清理图片
-                this.clearPictureFile(oldPicture);
-            }
-        }
         //更新空间的使用额度
         //// 开启事务
         //Long finalSpaceId = spaceId;
@@ -238,9 +228,21 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
         // 开启事务
         transactionTemplate.execute(status -> {
-            boolean result = this.saveOrUpdate(picture);
-            ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片上传失败");
+            // 如果 pictureId 不为空，表示更新，否则是新增
+            if (pictureId != null) {
+                // 如果是更新，需要补充 id 和编辑时间
+                picture.setId(pictureId);
+                //picture.setId(null);
+                picture.setEditTime(new Date());
+                Picture oldPicture = this.getById(pictureId);
+                if (oldPicture != null) {
+                    // 清理图片
+                    this.clearOOS(oldPicture);
+                }
+            }
 
+            boolean b = this.saveOrUpdate(picture);
+            ThrowUtils.throwIf(!b, ErrorCode.PARAMS_ERROR, "上传失败");
             // 获取最终空间ID（可能继承旧空间或使用新空间）
             Long actualSpaceId = picture.getSpaceId() != null ? picture.getSpaceId() : oldSpaceId;
 
@@ -493,21 +495,27 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     /**
      * 删除对象存储中的文件
+     *
      * @param oldPicture
      */
     @Async
     @Override
     public void clearPictureFile(Picture oldPicture) {
-        // 判断该图片是否被多条记录使用
-        String pictureUrl = oldPicture.getUrl();
-        long count = this.lambdaQuery()
-                .eq(Picture::getUrl, pictureUrl)
-                .count();
-        // 有不止一条记录用到了该图片，不清理
-        if (count > 1) {
-            return;
-        }
+        boolean b = clearOOS(oldPicture);
+        pictureMapper.deleteById(oldPicture);
+    }
+
+    private boolean clearOOS(Picture oldPicture) {
         try {
+            // 判断该图片是否被多条记录使用
+            String pictureUrl = oldPicture.getUrl();
+            long count = this.lambdaQuery()
+                    .eq(Picture::getUrl, pictureUrl)
+                    .count();
+            // 有不止一条记录用到了该图片，不清理
+            if (count > 1) {
+                return true;
+            }
             // 提取路径部分
             String picturePath = new URL(pictureUrl).getPath();
             cosManager.deleteObject(picturePath);
@@ -524,13 +532,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 String thumbnailPath = new URL(thumbnailUrl).getPath();
                 cosManager.deleteObject(thumbnailPath);
             }
-            pictureMapper.deleteById(oldPicture);
         } catch (MalformedURLException e) {
-            log.error("处理图片删除时遇到格式错误的 URL。图片 URL: {}", pictureUrl, e);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "格式错误的 URL");
+            throw new RuntimeException("URL格式错误");
         }
-
+        return false;
     }
+
+
     @Override
     public void deletePicture(long pictureId, User loginUser) {
         ThrowUtils.throwIf(pictureId <= 0, ErrorCode.PARAMS_ERROR);
@@ -559,8 +567,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             return true;
         });
         // 异步清理文件
-        this.clearPictureFile(oldPicture);
-
+        this.clearOOS(oldPicture);
     }
 
     @Override
@@ -589,7 +596,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     }
 
 
-
     @Override
     public void checkPictureAuth(User loginUser, Picture picture) {
         Long spaceId = picture.getSpaceId();
@@ -609,6 +615,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     /**
      * 根据空间ID删除图片
+     *
      * @param spaceId 空间ID
      */
     @Override
@@ -706,7 +713,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
         // 5. 批量更新
         boolean result = this.updateBatchById(pictureList);
-        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR,"批量编辑失败");
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "批量编辑失败");
     }
 
     /**
