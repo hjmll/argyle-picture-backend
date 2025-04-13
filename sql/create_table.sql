@@ -20,7 +20,7 @@ create table if not exists user
     isDelete     tinyint      default 0                 not null comment '是否删除',
     vipExpireTime datetime     null comment '会员过期时间',
     vipCode       varchar(128) null comment '会员兑换码',
-    vipNumber     bigint       null comment '会员编号'
+    vipNumber     bigint       null comment '会员编号',
     UNIQUE KEY uk_userAccount (userAccount),
     INDEX idx_userName (userName)
 ) comment '用户' collate = utf8mb4_unicode_ci;
@@ -65,6 +65,7 @@ CREATE INDEX idx_reviewStatus ON picture (reviewStatus);
 ALTER TABLE picture
     -- 添加新列
     ADD COLUMN thumbnailUrl varchar(512) NULL COMMENT '缩略图 url';
+    ADD COLUMN originalUrl varchar(512) NULL COMMENT '原始图 url';
 
 
 -- 空间表
