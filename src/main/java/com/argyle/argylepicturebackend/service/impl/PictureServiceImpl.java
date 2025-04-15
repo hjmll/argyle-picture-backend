@@ -104,6 +104,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
     }
 
+    @Transactional
     @Override
     public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
@@ -215,7 +216,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             picture.setEditTime(new Date());
             Picture oldPicture = this.getById(pictureId);
             if (oldPicture != null) {
-                // 清理oss中的图片
+                // 清理图片
                 this.clearPictureFile(oldPicture);
             }
         }
@@ -238,9 +239,21 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
         // 开启事务
         transactionTemplate.execute(status -> {
-            boolean result = this.saveOrUpdate(picture);
-            ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片上传失败");
+            // 如果 pictureId 不为空，表示更新，否则是新增
+            if (pictureId != null) {
+                // 如果是更新，需要补充 id 和编辑时间
+                picture.setId(pictureId);
+                //picture.setId(null);
+                picture.setEditTime(new Date());
+                Picture oldPicture = this.getById(pictureId);
+                if (oldPicture != null) {
+                    // 清理图片
+                    this.clearOOS(oldPicture);
+                }
+            }
 
+            boolean b = this.saveOrUpdate(picture);
+            ThrowUtils.throwIf(!b, ErrorCode.PARAMS_ERROR, "上传失败");
             // 获取最终空间ID（可能继承旧空间或使用新空间）
             Long actualSpaceId = picture.getSpaceId() != null ? picture.getSpaceId() : oldSpaceId;
 
@@ -498,16 +511,21 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Async
     @Override
     public void clearPictureFile(Picture oldPicture) {
-        // 判断该图片是否被多条记录使用
-        String pictureUrl = oldPicture.getUrl();
-        long count = this.lambdaQuery()
-                .eq(Picture::getUrl, pictureUrl)
-                .count();
-        // 有不止一条记录用到了该图片，不清理
-        if (count > 1) {
-            return;
-        }
+        boolean b = clearOOS(oldPicture);
+        pictureMapper.deleteById(oldPicture);
+    }
+
+    private boolean clearOOS(Picture oldPicture) {
         try {
+            // 判断该图片是否被多条记录使用
+            String pictureUrl = oldPicture.getUrl();
+            long count = this.lambdaQuery()
+                    .eq(Picture::getUrl, pictureUrl)
+                    .count();
+            // 有不止一条记录用到了该图片，不清理
+            if (count > 1) {
+                return true;
+            }
             // 提取路径部分
             String picturePath = new URL(pictureUrl).getPath();
             cosManager.deleteObject(picturePath);
@@ -524,13 +542,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 String thumbnailPath = new URL(thumbnailUrl).getPath();
                 cosManager.deleteObject(thumbnailPath);
             }
-            //pictureMapper.deleteById(oldPicture);
         } catch (MalformedURLException e) {
-            log.error("处理图片删除时遇到格式错误的 URL。图片 URL: {}", pictureUrl, e);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "格式错误的 URL");
+            throw new RuntimeException("URL格式错误");
         }
-
+        return false;
     }
+
+
     @Override
     public void deletePicture(long pictureId, User loginUser) {
         ThrowUtils.throwIf(pictureId <= 0, ErrorCode.PARAMS_ERROR);
@@ -559,8 +577,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             return true;
         });
         // 异步清理文件
-        this.clearPictureFile(oldPicture);
-
+        this.clearOOS(oldPicture);
     }
 
     @Override
@@ -587,7 +604,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         boolean result = this.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
     }
-
 
 
     @Override

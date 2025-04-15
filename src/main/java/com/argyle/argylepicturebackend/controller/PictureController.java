@@ -103,6 +103,7 @@ public class PictureController {
             throw new IllegalArgumentException("Unsupported cache type: " + cacheType);
         }
     }
+
     /**
      * 上传图片（可重新上传）
      */
@@ -210,15 +211,15 @@ public class PictureController {
             //已改为使用注解鉴权
             //pictureService.checkPictureAuth(loginUser, picture);
             space = spaceService.getById(spaceId);
-            ThrowUtils.throwIf(space == null,ErrorCode.NOT_FOUND_ERROR,"空间不存在");
+            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
         }
         User loginUser = userService.getLoginUser(request);
         List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
         PictureVO pictureVO = pictureService.getPictureVO(picture, request);
         pictureVO.setPermissionList(permissionList);
 
-        // 新增审核状态校验：非管理员用户只能查看已通过的图片
-        if (PictureReviewStatusEnum.PASS.getValue() != picture.getReviewStatus()) {
+        // 新增审核状态校验：非管理员用户只能查看已通过的图片或者自己空间的图片
+        if (spaceId == null && PictureReviewStatusEnum.PASS.getValue() != picture.getReviewStatus()) {
             // 1. 统一返回 NOT_FOUND（避免暴露未过审的图片存在）
             ThrowUtils.throwIf(true, ErrorCode.NOT_FOUND_ERROR);
         }
@@ -278,6 +279,7 @@ public class PictureController {
 
     /**
      * 主页数据写入缓存
+     *
      * @param pictureQueryRequest
      * @param request
      * @return
@@ -323,7 +325,7 @@ public class PictureController {
         // 存入 Redis 缓存
         String cacheValue = JSONUtil.toJsonStr(pictureVOPage);
         // 5 - 10 分钟随机过期，防止雪崩
-        int cacheExpireTime = 300 +  RandomUtil.randomInt(0, 300);
+        int cacheExpireTime = 300 + RandomUtil.randomInt(0, 300);
         valueOps.set(cacheKey, cacheValue, cacheExpireTime, TimeUnit.SECONDS);
         // 写入本地缓存
         LOCAL_CACHE.put(cacheKey, cacheValue);
@@ -395,7 +397,6 @@ public class PictureController {
     }
 
 
-
     @GetMapping("/tag_category")
     public BaseResponse<PictureTagCategory> listPictureTagCategory() {
         PictureTagCategory pictureTagCategory = new PictureTagCategory();
@@ -421,6 +422,7 @@ public class PictureController {
         int uploadCount = pictureService.uploadPictureByBatch(pictureUploadByBatchRequest, loginUser);
         return ResultUtils.success(uploadCount);
     }
+
     /**
      * 以图搜图
      */
