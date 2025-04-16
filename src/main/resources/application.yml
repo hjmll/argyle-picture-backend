@@ -14,7 +14,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/argyle_picture
     username: root
-    password: 123456
+    password: root
     # Redis 配置
   redis:
     database: 1
@@ -42,7 +42,7 @@ spring:
         driver-class-name: com.mysql.cj.jdbc.Driver
         url: jdbc:mysql://localhost:3306/argyle_picture?useSSL=false&allowPublicKeyRetrieval=true
         username: root
-        password: 123456
+        password: root
     rules:
       sharding:
         tables:
