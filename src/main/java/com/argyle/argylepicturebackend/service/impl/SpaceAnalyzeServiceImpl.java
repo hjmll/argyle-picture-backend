@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * @Description:
  */
 @Service
-public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space> implements SpaceAnalyzeService{
+public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space> implements SpaceAnalyzeService {
     @Resource
     private UserService userService;
     @Resource
@@ -79,7 +79,10 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space> imp
             ThrowUtils.throwIf(spaceId == null || spaceId <= 0, ErrorCode.PARAMS_ERROR);
             // 获取空间信息
             Space space = spaceService.getById(spaceId);
+            //todo 先暂时使用計算
+            spaceInformationStatistics(spaceId, space);
             ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+
 
             // 权限校验：仅空间所有者或管理员可访问
             spaceService.checkSpaceAuth(loginUser, space);
@@ -97,6 +100,20 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space> imp
             response.setCountUsageRatio(countUsageRatio);
             return response;
         }
+    }
+
+    /**
+     * 空间信息统计方法
+     */
+    public void spaceInformationStatistics(Long spaceId, Space space) {
+        //查询统计信息
+        QueryWrapper<Picture> eq = new QueryWrapper<Picture>()
+                .eq("isDelete", 0)
+                .eq("spaceId", spaceId)
+                .select("count(id) as usedCount", "sum(picSize) as usedSize");
+        Map<String, Object> map = pictureService.getMap(eq);
+        space.setTotalCount(map.get("usedCount") == null ? 0 : Long.parseLong(map.get("usedCount").toString()));
+        space.setTotalSize(map.get("usedSize") == null ? 0 : Long.parseLong(map.get("usedSize").toString()));
     }
 
     @Override
@@ -131,6 +148,7 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space> imp
 
     /**
      * 检查空间分析权限
+     *
      * @param spaceAnalyzeRequest
      * @param loginUser
      */
@@ -151,6 +169,7 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space> imp
 
     /**
      * 填充查询Wrapper
+     *
      * @param spaceAnalyzeRequest
      * @param queryWrapper
      */
@@ -276,6 +295,7 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space> imp
                 })
                 .collect(Collectors.toList());
     }
+
     /**
      * 获取空间使用分析
      */
@@ -295,10 +315,6 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space> imp
         // 查询结果
         return spaceService.list(queryWrapper);
     }
-
-
-
-
 
 
 }

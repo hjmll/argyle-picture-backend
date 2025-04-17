@@ -44,25 +44,24 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
-
 import javax.servlet.http.HttpServletRequest;
 import java.awt.*;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
-* @author hjm
-* @description 针对表【picture(图片)】的数据库操作Service实现
-* @createDate 2025-01-25 17:09:12
-*/
+ * @author hjm
+ * @description 针对表【picture(图片)】的数据库操作Service实现
+ * @createDate 2025-01-25 17:09:12
+ */
 @Service
 @Slf4j
 public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
-    implements PictureService {
+        implements PictureService {
     @Resource
     private UserService userService;
 
@@ -110,7 +109,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
         //校验空间是否存在
         Long spaceId = pictureUploadRequest.getSpaceId();
-        if (spaceId != null){
+        if (spaceId != null) {
             Space space = spaceService.getById(spaceId);
             ThrowUtils.throwIf(space == null, ErrorCode.PARAMS_ERROR, "空间不存在");
             ////校验是否有空间的权限 仅空间管理员上传
@@ -118,10 +117,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             //    throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "没有空间权限");
             //}
             //校验空间额度
-            if (space.getTotalCount() >= space.getMaxCount()){
+            if (space.getTotalCount() >= space.getMaxCount()) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间额度不足");
             }
-            if (space.getTotalSize() >= space.getMaxSize()){
+            if (space.getTotalSize() >= space.getMaxSize()) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间容量不足");
             }
 
@@ -217,7 +216,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             Picture oldPicture = this.getById(pictureId);
             if (oldPicture != null) {
                 // 清理图片
-                this.clearPictureFile(oldPicture);
+                this.clearOOS(oldPicture);
             }
         }
         //更新空间的使用额度
@@ -506,6 +505,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     /**
      * 删除对象存储中的文件
+     *
      * @param oldPicture
      */
     @Async
@@ -625,6 +625,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     /**
      * 根据空间ID删除图片
+     *
      * @param spaceId 空间ID
      */
     @Override
@@ -722,7 +723,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
         // 5. 批量更新
         boolean result = this.updateBatchById(pictureList);
-        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR,"批量编辑失败");
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "批量编辑失败");
     }
 
     /**

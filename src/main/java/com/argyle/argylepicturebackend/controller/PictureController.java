@@ -3,11 +3,19 @@ package com.argyle.argylepicturebackend.controller;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
+import com.argyle.argylepicturebackend.annotation.AuthCheck;
 import com.argyle.argylepicturebackend.api.aliyunai.AliYunAiApi;
 import com.argyle.argylepicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
 import com.argyle.argylepicturebackend.api.aliyunai.model.GetOutPaintingTaskResponse;
 import com.argyle.argylepicturebackend.api.imagesearch.ImageSearchApiFacade;
 import com.argyle.argylepicturebackend.api.imagesearch.model.ImageSearchResult;
+import com.argyle.argylepicturebackend.common.BaseResponse;
+import com.argyle.argylepicturebackend.common.DeleteRequest;
+import com.argyle.argylepicturebackend.common.ResultUtils;
+import com.argyle.argylepicturebackend.constant.UserConstant;
+import com.argyle.argylepicturebackend.exception.BusinessException;
+import com.argyle.argylepicturebackend.exception.ErrorCode;
+import com.argyle.argylepicturebackend.exception.ThrowUtils;
 import com.argyle.argylepicturebackend.manager.auth.SpaceUserAuthManager;
 import com.argyle.argylepicturebackend.manager.auth.StpKit;
 import com.argyle.argylepicturebackend.manager.auth.annotation.SaSpaceCheckPermission;
@@ -18,18 +26,10 @@ import com.argyle.argylepicturebackend.manager.cache.RedisCacheStrategy;
 import com.argyle.argylepicturebackend.model.dto.picture.*;
 import com.argyle.argylepicturebackend.model.entity.*;
 import com.argyle.argylepicturebackend.model.enums.PictureReviewStatusEnum;
-import com.argyle.argylepicturebackend.service.*;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.argyle.argylepicturebackend.annotation.AuthCheck;
-import com.argyle.argylepicturebackend.common.BaseResponse;
-import com.argyle.argylepicturebackend.common.DeleteRequest;
-import com.argyle.argylepicturebackend.common.ResultUtils;
-import com.argyle.argylepicturebackend.constant.UserConstant;
-import com.argyle.argylepicturebackend.exception.BusinessException;
-import com.argyle.argylepicturebackend.exception.ErrorCode;
-import com.argyle.argylepicturebackend.exception.ThrowUtils;
 import com.argyle.argylepicturebackend.model.vo.PictureTagCategory;
 import com.argyle.argylepicturebackend.model.vo.PictureVO;
+import com.argyle.argylepicturebackend.service.*;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.slf4j.Slf4j;
@@ -44,8 +44,6 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -218,11 +216,11 @@ public class PictureController {
         PictureVO pictureVO = pictureService.getPictureVO(picture, request);
         pictureVO.setPermissionList(permissionList);
 
-        // 新增审核状态校验：非管理员用户只能查看已通过的图片或者自己空间的图片
-        if (spaceId == null && PictureReviewStatusEnum.PASS.getValue() != picture.getReviewStatus()) {
-            // 1. 统一返回 NOT_FOUND（避免暴露未过审的图片存在）
-            ThrowUtils.throwIf(true, ErrorCode.NOT_FOUND_ERROR);
-        }
+//        // 新增审核状态校验：非管理员用户只能查看已通过的图片或者自己空间的图片
+//        if (spaceId == null && PictureReviewStatusEnum.PASS.getValue() != picture.getReviewStatus()) {
+//            // 1. 统一返回 NOT_FOUND（避免暴露未过审的图片存在）
+//            ThrowUtils.throwIf(true, ErrorCode.NOT_FOUND_ERROR);
+//        }
         // 获取封装类
         return ResultUtils.success(pictureVO);
     }
