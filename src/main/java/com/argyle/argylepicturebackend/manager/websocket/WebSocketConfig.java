@@ -7,6 +7,9 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 
 import javax.annotation.Resource;
 
+/**
+ * WebSocket 配置（定义连接）
+ */
 @Configuration
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
@@ -19,7 +22,6 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        // websocket
         registry.addHandler(pictureEditHandler, "/ws/picture/edit")
                 .addInterceptors(wsHandshakeInterceptor)
                 .setAllowedOrigins("*");

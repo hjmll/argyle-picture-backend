@@ -2,6 +2,7 @@ package com.argyle.argylepicturebackend.manager.websocket;
 
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
+
 import com.argyle.argylepicturebackend.manager.auth.SpaceUserAuthManager;
 import com.argyle.argylepicturebackend.manager.auth.model.SpaceUserPermissionConstant;
 import com.argyle.argylepicturebackend.model.entity.Picture;
@@ -11,7 +12,6 @@ import com.argyle.argylepicturebackend.model.enums.SpaceTypeEnum;
 import com.argyle.argylepicturebackend.service.PictureService;
 import com.argyle.argylepicturebackend.service.SpaceService;
 import com.argyle.argylepicturebackend.service.UserService;
-import groovyjarjarantlr4.v4.runtime.misc.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
@@ -25,8 +25,11 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
-@Component
+/**
+ * WebSocket 拦截器，建立连接前要先校验
+ */
 @Slf4j
+@Component
 public class WsHandshakeInterceptor implements HandshakeInterceptor {
 
     @Resource
@@ -41,24 +44,35 @@ public class WsHandshakeInterceptor implements HandshakeInterceptor {
     @Resource
     private SpaceUserAuthManager spaceUserAuthManager;
 
+    /**
+     * 建立连接前要先校验
+     *
+     * @param request
+     * @param response
+     * @param wsHandler
+     * @param attributes 给 WebSocketSession 会话设置属性
+     * @return
+     * @throws Exception
+     */
     @Override
-    public boolean beforeHandshake(@NotNull ServerHttpRequest request, @NotNull ServerHttpResponse response, @NotNull WebSocketHandler wsHandler, @NotNull Map<String, Object> attributes) {
+    public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
         if (request instanceof ServletServerHttpRequest) {
-            HttpServletRequest servletRequest = ((ServletServerHttpRequest) request).getServletRequest();
-            // 获取请求参数
-            String pictureId = servletRequest.getParameter("pictureId");
+            HttpServletRequest httpServletRequest = ((ServletServerHttpRequest) request).getServletRequest();
+            // 从请求中获取参数
+            String pictureId = httpServletRequest.getParameter("pictureId");
             if (StrUtil.isBlank(pictureId)) {
                 log.error("缺少图片参数，拒绝握手");
                 return false;
             }
-            User loginUser = userService.getLoginUser(servletRequest);
+            // 获取当前登录用户
+            User loginUser = userService.getLoginUser(httpServletRequest);
             if (ObjUtil.isEmpty(loginUser)) {
                 log.error("用户未登录，拒绝握手");
                 return false;
             }
-            // 校验用户是否有该图片的权限
+            // 校验用户是否有编辑当前图片的权限
             Picture picture = pictureService.getById(pictureId);
-            if (picture == null) {
+            if (ObjUtil.isEmpty(picture)) {
                 log.error("图片不存在，拒绝握手");
                 return false;
             }
@@ -66,21 +80,21 @@ public class WsHandshakeInterceptor implements HandshakeInterceptor {
             Space space = null;
             if (spaceId != null) {
                 space = spaceService.getById(spaceId);
-                if (space == null) {
-                    log.error("空间不存在，拒绝握手");
+                if (ObjUtil.isEmpty(space)) {
+                    log.error("图片所在空间不存在，拒绝握手");
                     return false;
                 }
                 if (space.getSpaceType() != SpaceTypeEnum.TEAM.getValue()) {
-                    log.info("不是团队空间，拒绝握手");
+                    log.error("图片所在空间不是团队空间，拒绝握手");
                     return false;
                 }
             }
             List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
             if (!permissionList.contains(SpaceUserPermissionConstant.PICTURE_EDIT)) {
-                log.error("没有图片编辑权限，拒绝握手");
+                log.error("用户没有编辑图片的权限，拒绝握手");
                 return false;
             }
-            // 设置 attributes
+            // 设置用户登录信息等属性到 WebSocket 会话中
             attributes.put("user", loginUser);
             attributes.put("userId", loginUser.getId());
             attributes.put("pictureId", Long.valueOf(pictureId)); // 记得转换为 Long 类型
@@ -89,6 +103,6 @@ public class WsHandshakeInterceptor implements HandshakeInterceptor {
     }
 
     @Override
-    public void afterHandshake(@NotNull ServerHttpRequest request, @NotNull ServerHttpResponse response, @NotNull WebSocketHandler wsHandler, Exception exception) {
+    public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Exception exception) {
     }
 }
