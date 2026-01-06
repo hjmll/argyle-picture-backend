@@ -5,6 +5,18 @@ target/
 !**/src/test/**/target/
 target/*
 
+
+
+out/
+*.jar
+*.war
+*.ear
+
+# 日志文件
+*.log
+hs_err_pid*.log
+
+
 ### Custom ###
 application-local.yml
 application-prod.yml
