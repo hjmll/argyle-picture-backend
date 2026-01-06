@@ -106,6 +106,15 @@ ALTER TABLE space
 
 CREATE INDEX idx_spaceType ON space (spaceType);
 
+-- 添加AI识别相关字段
+ALTER TABLE picture
+    ADD COLUMN aiDescription TEXT NULL COMMENT 'AI识别的图片描述和元素信息',
+    ADD COLUMN aiTags VARCHAR(1024) NULL COMMENT 'AI识别的标签（JSON数组）';
+
+-- 创建基于AI识别结果的索引（用于全文搜索）
+CREATE FULLTEXT INDEX idx_aiDescription ON picture(aiDescription);
+CREATE INDEX idx_aiTags ON picture(aiTags);
+
 -- 空间成员表
 create table if not exists space_user
 (

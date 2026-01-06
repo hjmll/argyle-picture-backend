@@ -8,6 +8,7 @@ import cn.hutool.json.JSONUtil;
 import com.argyle.argylepicturebackend.api.aliyunai.AliYunAiApi;
 import com.argyle.argylepicturebackend.api.aliyunai.model.CreateOutPaintingTaskRequest;
 import com.argyle.argylepicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
+import com.argyle.argylepicturebackend.api.aliyunai.model.ImageRecognitionResponse;
 import com.argyle.argylepicturebackend.exception.BusinessException;
 import com.argyle.argylepicturebackend.exception.ErrorCode;
 import com.argyle.argylepicturebackend.exception.ThrowUtils;
@@ -27,6 +28,7 @@ import com.argyle.argylepicturebackend.model.vo.UserVO;
 import com.argyle.argylepicturebackend.service.PictureService;
 import com.argyle.argylepicturebackend.service.SpaceService;
 import com.argyle.argylepicturebackend.service.UserService;
+import com.argyle.argylepicturebackend.utils.AiTagExtractor;
 import com.argyle.argylepicturebackend.utils.ColorSimilarUtils;
 import com.argyle.argylepicturebackend.utils.ColorTransformUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -357,6 +359,15 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             queryWrapper.and(qw -> qw.like("name", searchText)
                     .or()
                     .like("introduction", searchText)
+            );
+        }
+
+        // AI识别结果搜索
+        String aiSearchText = pictureQueryRequest.getAiSearchText();
+        if (StrUtil.isNotBlank(aiSearchText)) {
+            queryWrapper.and(qw -> qw.like("aiDescription", aiSearchText)
+                    .or()
+                    .like("aiTags", aiSearchText)
             );
         }
         queryWrapper.eq(ObjUtil.isNotEmpty(id), "id", id);
@@ -765,6 +776,54 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         BeanUtil.copyProperties(createPictureOutPaintingTaskRequest, taskRequest);
         // 创建任务
         return aliYunAiApi.createOutPaintingTask(taskRequest);
+    }
+
+    @Override
+    public void recognizePicture(Long pictureId, User loginUser) {
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR, "图片ID不能为空");
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
+
+        // 获取图片信息
+        Picture picture = this.getById(pictureId);
+        ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
+
+        // 权限校验：仅本人或管理员可以识别
+        if (!picture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "没有权限识别该图片");
+        }
+
+        try {
+            // 调用AI识别接口
+            ImageRecognitionResponse response = aliYunAiApi.recognizeImage(picture.getUrl());
+            if (response == null || response.getOutput() == null) {
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, "AI识别结果为空");
+            }
+
+            String description = response.getOutput().getText();
+            if (StrUtil.isBlank(description)) {
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, "AI识别描述为空");
+            }
+
+            // 从描述中提取标签
+            List<String> aiTags = AiTagExtractor.extractTags(description);
+
+            // 更新图片信息
+            Picture updatePicture = new Picture();
+            updatePicture.setId(pictureId);
+            updatePicture.setAiDescription(description);
+            updatePicture.setAiTags(JSONUtil.toJsonStr(aiTags));
+
+            boolean result = this.updateById(updatePicture);
+            ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "更新AI识别结果失败");
+
+            log.info("图片AI识别成功，pictureId={}, description长度={}, tags数量={}", 
+                    pictureId, description.length(), aiTags.size());
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("图片AI识别失败，pictureId={}", pictureId, e);
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "图片AI识别失败：" + e.getMessage());
+        }
     }
 
 

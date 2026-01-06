@@ -1,5 +1,6 @@
 package com.argyle.argylepicturebackend.manager.websocket.model;
 
+
 import com.argyle.argylepicturebackend.model.vo.UserVO;
 import lombok.AllArgsConstructor;
 import lombok.Data;

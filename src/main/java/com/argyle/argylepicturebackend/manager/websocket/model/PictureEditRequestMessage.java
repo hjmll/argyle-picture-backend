@@ -18,7 +18,7 @@ public class PictureEditRequestMessage {
     private String type;
 
     /**
-     * 执行的编辑动作
+     * 执行的编辑动作（放大、缩小）
      */
     private String editAction;
 }

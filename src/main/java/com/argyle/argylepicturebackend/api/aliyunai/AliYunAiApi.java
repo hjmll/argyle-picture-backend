@@ -9,6 +9,8 @@ import cn.hutool.json.JSONUtil;
 import com.argyle.argylepicturebackend.api.aliyunai.model.CreateOutPaintingTaskRequest;
 import com.argyle.argylepicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
 import com.argyle.argylepicturebackend.api.aliyunai.model.GetOutPaintingTaskResponse;
+import com.argyle.argylepicturebackend.api.aliyunai.model.ImageRecognitionRequest;
+import com.argyle.argylepicturebackend.api.aliyunai.model.ImageRecognitionResponse;
 import com.argyle.argylepicturebackend.exception.BusinessException;
 import com.argyle.argylepicturebackend.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,9 @@ public class AliYunAiApi {
 
     // 查询任务状态
     public static final String GET_OUT_PAINTING_TASK_URL = "https://dashscope.aliyuncs.com/api/v1/tasks/%s";
+
+    // 图片识别API地址
+    public static final String IMAGE_RECOGNITION_URL = "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
     /**
      * 创建任务
@@ -78,6 +83,47 @@ public class AliYunAiApi {
                 throw new BusinessException(ErrorCode.OPERATION_ERROR, "获取任务失败");
             }
             return JSONUtil.toBean(httpResponse.body(), GetOutPaintingTaskResponse.class);
+        }
+    }
+
+    /**
+     * 识别图片中的元素和信息
+     *
+     * @param imageUrl 图片URL
+     * @return 识别结果
+     */
+    public ImageRecognitionResponse recognizeImage(String imageUrl) {
+        if (StrUtil.isBlank(imageUrl)) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "图片URL不能为空");
+        }
+
+        // 构建请求
+        ImageRecognitionRequest request = new ImageRecognitionRequest();
+        ImageRecognitionRequest.Input input = new ImageRecognitionRequest.Input();
+        input.setImage(imageUrl);
+        // 使用详细的提示词来指导AI识别图片内容
+        input.setPrompt("请详细描述这张图片中的所有元素、对象、场景、颜色、风格等信息。包括但不限于：主要对象、背景、人物、动物、植物、建筑、物品、场景类型、颜色搭配、艺术风格等。请用中文回答，尽量详细和准确。");
+        request.setInput(input);
+
+        // 发送请求
+        HttpRequest httpRequest = HttpRequest.post(IMAGE_RECOGNITION_URL)
+                .header(Header.AUTHORIZATION, "Bearer " + apiKey)
+                .header(Header.CONTENT_TYPE, ContentType.JSON.getValue())
+                .body(JSONUtil.toJsonStr(request));
+
+        try (HttpResponse httpResponse = httpRequest.execute()) {
+            if (!httpResponse.isOk()) {
+                log.error("图片识别请求异常：{}", httpResponse.body());
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, "图片识别失败");
+            }
+            ImageRecognitionResponse response = JSONUtil.toBean(httpResponse.body(), ImageRecognitionResponse.class);
+            String errorCode = response.getCode();
+            if (StrUtil.isNotBlank(errorCode)) {
+                String errorMessage = response.getMessage();
+                log.error("图片识别失败，errorCode:{}, errorMessage:{}", errorCode, errorMessage);
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, "图片识别接口响应异常：" + errorMessage);
+            }
+            return response;
         }
     }
 }

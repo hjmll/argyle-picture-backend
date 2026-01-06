@@ -111,6 +111,10 @@ public class PictureQueryRequest extends PageRequest implements Serializable {
      */
     private Date endEditTime;
 
+    /**
+     * AI识别结果搜索关键词（搜索AI描述和AI标签）
+     */
+    private String aiSearchText;
 
     private static final long serialVersionUID = 1L;
 }

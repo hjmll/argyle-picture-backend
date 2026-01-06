@@ -136,6 +136,16 @@ public class Picture implements Serializable {
      */
     private String picColor;
 
+    /**
+     * AI识别的图片描述和元素信息（JSON格式，包含描述文本和提取的关键词）
+     */
+    private String aiDescription;
+
+    /**
+     * AI识别的标签（JSON数组，从描述中提取的关键词）
+     */
+    private String aiTags;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 

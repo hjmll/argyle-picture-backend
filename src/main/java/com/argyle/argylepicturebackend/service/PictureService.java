@@ -87,4 +87,12 @@ public interface PictureService extends IService<Picture> {
      * 创建AI扩图任务
      */
     CreateOutPaintingTaskResponse createPictureOutPaintingTask(CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest, User loginUser);
+
+    /**
+     * AI识别图片元素和信息
+     *
+     * @param pictureId 图片ID
+     * @param loginUser 登录用户
+     */
+    void recognizePicture(Long pictureId, User loginUser);
 }

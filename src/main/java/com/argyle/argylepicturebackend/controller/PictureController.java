@@ -489,4 +489,19 @@ public class PictureController {
         GetOutPaintingTaskResponse task = aliYunAiApi.getOutPaintingTask(taskId);
         return ResultUtils.success(task);
     }
+
+    /**
+     * AI识别图片元素和信息
+     */
+    @PostMapping("/recognize")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_EDIT)
+    public BaseResponse<Boolean> recognizePicture(@RequestBody PictureRecognitionRequest pictureRecognitionRequest,
+                                                   HttpServletRequest request) {
+        ThrowUtils.throwIf(pictureRecognitionRequest == null, ErrorCode.PARAMS_ERROR);
+        Long pictureId = pictureRecognitionRequest.getPictureId();
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR, "图片ID不能为空");
+        User loginUser = userService.getLoginUser(request);
+        pictureService.recognizePicture(pictureId, loginUser);
+        return ResultUtils.success(true);
+    }
 }

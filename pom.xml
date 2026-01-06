@@ -174,7 +174,6 @@
                 <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>com.argyle.argylepicturebackend.ArgylePictureBackendApplication</mainClass>
-                    <skip>true</skip>
                 </configuration>
                 <executions>
                     <execution>

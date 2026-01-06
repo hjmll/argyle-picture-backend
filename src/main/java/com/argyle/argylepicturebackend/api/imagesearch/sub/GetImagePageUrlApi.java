@@ -34,11 +34,13 @@ public class GetImagePageUrlApi {
         long uptime = System.currentTimeMillis();
         // 请求地址
         String url = "https://graph.baidu.com/upload?uptime=" + uptime;
+        String acsToken = "1749615995919_1749653813682_PewzWlz7XY1vYKEVJIhm3gYOpaGgmPVeutFQEEpWgcbFp/TxqMu6b0xV8yIbLpOAVMEvALhleQIXu/GK0vtdx3dpMt3PVc4b7eq52LvjowS6ZRdl9mQeaW7XYqL9MKNSlvZzbbSa8bi9i28J5u4RHqYUl6ZJLip24l0xm6MnKSzv7AwR8QewFR7oTzoFBWqyFX8dRycmBRkkb0//IQVwRFkOu8s00JPLiqog2o6aUNddW+lsdzXiIx0vkwMtsBH/0K6SoDnXE9wbDd3VhKnVkubpKfci9aLoyTiqd8pK9pc2PcPUKUVloGOQfdNmzX0rW9AJ6ImoAyn9HafgtgpEJbbISXfey7si6BrvTlRiEBEBOOsHYfGmyxgm1rh3C9G3+Et2U+VNmCF2RqJ7EkrQIv5oe8kzQZoa5JMsnU1aiDhAAMawWm55NiOagflKECy3";
 
         try {
             // 2. 发送 POST 请求到百度接口
             HttpResponse response = HttpRequest.post(url)
                     .form(formData)
+                    .header("Acs-Token",acsToken)
                     .timeout(5000)
                     .execute();
             // 判断响应状态
