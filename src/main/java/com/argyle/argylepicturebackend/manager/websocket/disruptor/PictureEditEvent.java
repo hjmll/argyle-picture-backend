@@ -5,6 +5,9 @@ import com.argyle.argylepicturebackend.model.entity.User;
 import lombok.Data;
 import org.springframework.web.socket.WebSocketSession;
 
+/**
+ * 图片编辑事件
+ */
 @Data
 public class PictureEditEvent {
 

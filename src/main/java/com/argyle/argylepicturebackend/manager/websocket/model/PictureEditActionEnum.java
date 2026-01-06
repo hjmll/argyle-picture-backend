@@ -3,7 +3,7 @@ package com.argyle.argylepicturebackend.manager.websocket.model;
 import lombok.Getter;
 
 /**
- * 图片编辑操作类型枚举
+ * 图片编辑动作枚举
  */
 @Getter
 public enum PictureEditActionEnum {
